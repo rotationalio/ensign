@@ -708,6 +708,15 @@ func TestDeduplicationEquals(t *testing.T) {
 		assert require.BoolAssertionFunc
 	}{
 		{
+			nil, nil, require.True,
+		},
+		{
+			nil, &Deduplication{}, require.False,
+		},
+		{
+			&Deduplication{}, nil, require.False,
+		},
+		{
 			&Deduplication{}, &Deduplication{}, require.True,
 		},
 		{
@@ -773,10 +782,15 @@ func TestDeduplicationEquals(t *testing.T) {
 }
 
 func TestDeduplicationNormalize(t *testing.T) {
+
 	testCases := []struct {
 		in       *Deduplication
 		expected *Deduplication
 	}{
+		{
+			nil,
+			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
+		},
 		{
 			&Deduplication{},
 			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
@@ -815,28 +829,36 @@ func TestDeduplicationNormalize(t *testing.T) {
 		},
 	}
 
-	for i, tc := range testCases {
-		tc.in.Normalize()
-		require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
+	t.Run("InPlace", func(t *testing.T) {
+		for i, tc := range testCases[1:] {
+			tc.in.Normalize()
+			require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
 
-		// Default Invariants
-		require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
-		require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
+			// Default Invariants
+			require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
+			require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
 
-		// Strategy Based Invariants
-		switch tc.in.Strategy {
-		case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
-			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-		case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
-			require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-		case Deduplication_UNIQUE_FIELD:
-			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			// Strategy Based Invariants
+			switch tc.in.Strategy {
+			case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+				require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+				require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			case Deduplication_UNIQUE_FIELD:
+				require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			}
 		}
+	})
 
-	}
+	t.Run("Returned", func(t *testing.T) {
+		for i, tc := range testCases {
+			actual := tc.in.Normalize()
+			require.Equal(t, tc.expected, actual, "test case %d failed", i)
+		}
+	})
 }
 
 const fixturePath = "testdata/events.json"
