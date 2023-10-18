@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,8 +14,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -233,9 +232,11 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
-	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
+	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()),
+		radish.WithContext(middleware.TaskContext(c)),
+	)
 
 	c.JSON(http.StatusCreated, out)
 }
@@ -413,9 +414,11 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
-	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
+	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()),
+		radish.WithContext(middleware.TaskContext(c)),
+	)
 
 	c.Status(http.StatusNoContent)
 }

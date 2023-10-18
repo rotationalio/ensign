@@ -16,7 +16,11 @@ export function useLogin(): LoginMutation {
         },
       });
 
-      toast.error(error?.response?.data?.error || t`Something went wrong, please try again later.`);
+      if (!error?.response?.data?.unverified) {
+        toast.error(
+          error?.response?.data?.error || t`Something went wrong, please try again later.`
+        );
+      }
     },
   });
 

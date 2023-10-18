@@ -23,19 +23,20 @@ function SetupNewProject() {
         className="min-h-[130px]"
         contentClassName="my-2"
       >
-        <div className="mt-2 flex flex-col justify-between gap-4 px-3 xl:flex-row ">
+        <div className="mt-2 flex flex-col justify-between gap-4 px-3 xl:flex-row">
           <p className="text-md  w-full sm:w-4/5">
             <Trans>
-              A project is <span className="font-bold"> a database for events </span> — a collection
-              of datasets related by use case. However, it stores all updates to each object over
-              time, so you can observe changes and activity in your data feeds, applications, and
-              models. Use SDKs to connect sources to publish data to your project or subscribe to
-              read updates in real-time. Control access by generating API keys.
+              A project is <span className="font-bold">your use case</span> for real-time data
+              management. A project contains one or many <span className="font-bold">topics</span>.
+              Topics are immutable data stores that capture change over time. Control access to your
+              projects with API keys. Using SDKs, set up your data sources to publish data to your
+              topics in real-time. Then, set up downstream subscribers to read updates from your
+              topics in real-time.
             </Trans>
           </p>
           <div className="item-center place-items-center">
             <Button size="medium" onClick={onOpenNewProjectModal} data-testid="set-new-project">
-              <Trans>Create</Trans>
+              <Trans>Create Project</Trans>
             </Button>
           </div>
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,9 +14,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	responses "github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rotationalio/ensign/pkg/utils/units"
@@ -232,9 +231,11 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, t.ProjectID)
-	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
+	}), radish.WithErrorf("could not update stats for project %s", t.ProjectID.String()),
+		radish.WithContext(middleware.TaskContext(c)),
+	)
 
 	c.JSON(http.StatusCreated, t.ToAPI())
 }
@@ -471,12 +472,6 @@ func (s *Server) TopicEvents(c *gin.Context) {
 
 		// Ensure only one topic is counted
 		break
-	}
-
-	if len(out) == 0 {
-		sentry.Warn(c).ULID("topicID", topicID).Msg("topic exists in tenant but was not returned by ensign")
-		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
-		return
 	}
 
 	c.JSON(http.StatusOK, out)

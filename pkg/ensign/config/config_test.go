@@ -32,6 +32,9 @@ var testEnv = map[string]string{
 	"ENSIGN_AUTH_AUDIENCE":             "http://localhost:3000",
 	"ENSIGN_AUTH_ISSUER":               "http://localhost:8088",
 	"ENSIGN_AUTH_MIN_REFRESH_INTERVAL": "10m",
+	"ENSIGN_RADISH_WORKERS":            "8",
+	"ENSIGN_RADISH_QUEUE_SIZE":         "96",
+	"ENSIGN_RADISH_SERVER_NAME":        "ensign tasks",
 	"ENSIGN_SENTRY_DSN":                "http://testing.sentry.test/1234",
 	"ENSIGN_SENTRY_SERVER_NAME":        "test1234",
 	"ENSIGN_SENTRY_ENVIRONMENT":        "testing",
@@ -72,6 +75,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["ENSIGN_AUTH_AUDIENCE"], conf.Auth.Audience)
 	require.Equal(t, testEnv["ENSIGN_AUTH_ISSUER"], conf.Auth.Issuer)
 	require.Equal(t, 10*time.Minute, conf.Auth.MinRefreshInterval)
+	require.Equal(t, 8, conf.Radish.Workers)
+	require.Equal(t, 96, conf.Radish.QueueSize)
+	require.Equal(t, testEnv["ENSIGN_RADISH_SERVER_NAME"], conf.Radish.ServerName)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)

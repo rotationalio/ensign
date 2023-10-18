@@ -374,7 +374,7 @@ func (d *Deduplication) Equals(o *Deduplication) bool {
 //
 // NOTE: This method also sets the offset to the default if it is unknown.
 // NOTE: This method sets the deduplication strategy to None if it is unknown
-func (d *Deduplication) Normalize() {
+func (d *Deduplication) Normalize() *Deduplication {
 	// Set the offset to the default offset if unknown.
 	if d.Offset == Deduplication_OFFSET_UNKNOWN {
 		d.Offset = Deduplication_OFFSET_EARLIEST
@@ -396,6 +396,37 @@ func (d *Deduplication) Normalize() {
 		d.Keys = nil
 		d.Fields = uniqueSort(d.Fields)
 	}
+
+	return d
+}
+
+// Validates that the deduplication strategy can be implemented after normalization.
+func (d *Deduplication) Validate() error {
+	switch d.Strategy {
+	case Deduplication_UNKNOWN, Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+		if len(d.Keys) > 0 {
+			return ErrKeysNotAllowed
+		}
+		if len(d.Fields) > 0 {
+			return ErrFieldsNotAllowed
+		}
+	case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+		if len(d.Keys) == 0 {
+			return ErrNoKeys
+		}
+		if len(d.Fields) > 0 {
+			return ErrFieldsNotAllowed
+		}
+	case Deduplication_UNIQUE_FIELD:
+		if len(d.Fields) == 0 {
+			return ErrNoFields
+		}
+		if len(d.Keys) > 0 {
+			return ErrKeysNotAllowed
+		}
+	}
+
+	return nil
 }
 
 func uniqueSort(s []string) []string {

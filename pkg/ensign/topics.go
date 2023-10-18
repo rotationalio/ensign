@@ -3,14 +3,18 @@ package ensign
 import (
 	"context"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -350,11 +354,49 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 		return &api.TopicStatus{Id: topicID.String(), State: topic.Status}, nil
 	}
 
-	// Handle any changes to the deduplication strategy of the topic
-	// TODO: update the policy of the topic
+	// Validate the deduplication policy
+	if err = in.DeduplicationPolicy.Validate(); err != nil {
+		log.Debug().Err(err).Msg("invalid deduplication policy")
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Update the topic with the new policy
+	policy := in.DeduplicationPolicy.Normalize()
+	topic.Deduplication = policy
+	topic.Status = api.TopicState_PENDING
+
+	if err = s.meta.UpdateTopic(topic); err != nil {
+		sentry.Error(ctx).Err(err).Msg("could not update topic with policy")
+		return nil, status.Error(codes.Internal, "could not process set topic policy request")
+	}
+
 	// TODO: Update the broker with the new policy
-	// TODO: create a job to update the topic's policy
-	return nil, status.Error(codes.Unimplemented, "changing deduplication policies is coming soon!")
+
+	// Update duplicates in the topic info and rehash the events.
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
+		// Rehash the topic
+		if err := s.Rehash(ctx, topicID, topic.Deduplication); err != nil {
+			return err
+		}
+
+		// Mark the topic as ready again
+		topic, err := s.meta.RetrieveTopic(topicID)
+		if err != nil {
+			return err
+		}
+
+		topic.Status = api.TopicState_READY
+		if err := s.meta.UpdateTopic(topic); err != nil {
+			return err
+		}
+		return nil
+	}), radish.WithErrorf("could not complete rehash of %s", topicID),
+		radish.WithRetries(1),
+		radish.WithBackoff(backoff.NewConstantBackOff(5*time.Minute)),
+		radish.WithTimeout(30*time.Minute),
+	)
+
+	return &api.TopicStatus{Id: topicID.String(), State: topic.Status}, nil
 }
 
 // TopicNames returns a paginated response that maps topic names to IDs for all topics

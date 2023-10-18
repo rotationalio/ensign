@@ -109,3 +109,48 @@ func (s *readonlyEventsTestSuite) TestLoadIndash() {
 	require.NoError(iter.Error(), "expected no error iterating")
 	require.Len(hashes, 22, "expected the same number of hashes as events in the fixture")
 }
+
+func (s *eventsTestSuite) TestClearIndash() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load fixtures")
+	defer s.ResetDatabase()
+
+	// Get the initial fixture count in the database
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0xee), count, "unexpected initial fixtures, have they changed?")
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	err = s.store.ClearIndash(topicID)
+	require.NoError(err, "could")
+
+	// Ensure that the indash hashes were deleted
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0xd8), count, "expected indash objects to be cleared")
+	require.Less(uint64(0xd8), uint64(0xee))
+
+	// LoadIndash should no longer return any hashes
+	iter := s.store.LoadIndash(topicID)
+	defer iter.Release()
+
+	count = 0
+	for iter.Next() {
+		count++
+	}
+
+	require.NoError(iter.Error())
+	require.Zero(count, "expected no indashes returned after clearing them")
+}
+
+func (s *readonlyEventsTestSuite) TestClearIndash() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	err := s.store.ClearIndash(topicID)
+	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on clear indash")
+}

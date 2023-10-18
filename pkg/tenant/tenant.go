@@ -21,9 +21,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -67,7 +67,7 @@ type Server struct {
 	ensign      *EnsignClient        // client to issue requests to Ensign
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
-	tasks       *tasks.TaskManager   // task manager for performing background tasks
+	tasks       *radish.TaskManager  // task manager for performing background tasks
 	topics      *TopicSubscriber     // consume topic updates from Ensign
 	tokens      *tokens.Cache        // cache of user tokens for accessing Ensign
 	wg          *sync.WaitGroup      // waitgroup for go routines
@@ -90,8 +90,8 @@ func (s *Server) Setup() (err error) {
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
-		s.tasks = tasks.New(4, 64, time.Second)
-		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+		s.tasks = radish.New(s.conf.Radish)
+		s.tasks.Start()
 
 		s.tokens = tokens.NewCache(128)
 		log.Debug().Int("size", 128).Msg("user token cache created")
@@ -444,7 +444,7 @@ func (s *Server) GetEnsignClient() *EnsignClient {
 }
 
 // Expose the task manager to the tests (only allowed in testing mode).
-func (s *Server) GetTaskManager() *tasks.TaskManager {
+func (s *Server) GetTaskManager() *radish.TaskManager {
 	if s.conf.Mode == gin.TestMode {
 		return s.tasks
 	}
@@ -456,8 +456,9 @@ func (s *Server) GetTaskManager() *tasks.TaskManager {
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
 		s.tasks.Stop()
-		if s.tasks.IsStopped() {
-			s.tasks = tasks.New(4, 64, time.Second)
+		if !s.tasks.IsRunning() {
+			s.tasks = radish.New(radish.Config{Workers: 4, QueueSize: 64, ServerName: "tenant testing tasks"})
+			s.tasks.Start()
 		}
 		return
 	}

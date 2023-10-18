@@ -3,6 +3,8 @@ interface Props {
   value: any;
   children: React.ReactNode;
 }
+
+//TODO: improve this later to be more generic
 export const createGenericContext = (defaultValue: any) => {
   const context = React.createContext(defaultValue);
   const Provider = ({ value, children }: Props) => {
