@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
@@ -224,4 +225,14 @@ func (t *Type) Equals(o *Type) bool {
 // patch versions are equal to zero.
 func (t *Type) IsZero() bool {
 	return (t.Name == "" || t.Name == Unspecified) && t.MajorVersion == 0 && t.MinorVersion == 0 && t.PatchVersion == 0
+}
+
+// Repr returns the string representation of the type.
+func (t *Type) Repr() string {
+	return fmt.Sprintf("%s v%d.%d.%d", t.Name, t.MajorVersion, t.MinorVersion, t.PatchVersion)
+}
+
+// Semver returns the semantic version of the type.
+func (t *Type) Semver() string {
+	return fmt.Sprintf("%d.%d.%d", t.MajorVersion, t.MinorVersion, t.PatchVersion)
 }

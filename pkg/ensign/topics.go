@@ -101,6 +101,11 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
+	// Set topic default policies if they are not set on the topic
+	if in.Deduplication == nil || in.Deduplication.Strategy == api.Deduplication_UNKNOWN {
+		in.Deduplication = &api.Deduplication{Strategy: api.Deduplication_NONE}
+	}
+
 	// TODO: set the topic status as pending
 
 	// Create the topic in the store: note that the store will validate the topic
