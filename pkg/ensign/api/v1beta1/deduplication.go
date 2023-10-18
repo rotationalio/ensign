@@ -320,6 +320,7 @@ func (w *EventWrapper) HashUniqueField(fields []string) (_ []byte, err error) {
 //===========================================================================
 
 // DuplicateOf marks the original event (w) as a duplicate of the original event (o).
+// In other words, the original event (w) becomes a duplicate reference to the original.
 // The duplicate is updated in place to mark the wrapper as a duplicate of the original
 // and to reduce the data storage depending on the policy. For example, in strict mode,
 // the event data is nilified and only the wrapper metadata is kept, whereas in unique
