@@ -8,12 +8,20 @@ date: 2023-05-17T17:03:41-04:00
 
 ## Staging Environment
 
+| Field     | Value                                        | Alias                |
+|-----------|----------------------------------------------|----------------------|
+| Beacon UI | [https://ensign.world](https://ensign.world) |                      |
+| Endpoint  | `"staging.ensign.world:443"`                 | `"ensign.ninja:443"` |
+| AuthURL   | `"https://auth.ensign.world"`                |                      |
+
 Ensign developers can access the staging environment in order to perform testing and development or to QA release candidates before they are deployed.
 
 To get started, make sure that you've created an API Key in the staging environment using the Beacon UI at [https://ensign.world](https://ensign.world). Once you've obtained those credentials, add the following environment variables so that your script can access the credentials:
 
 - `$ENSIGN_CLIENT_ID`
 - `$ENSIGN_CLIENT_SECRET`
+
+### Go Snippet
 
 If you're working on the Go SDK in staging, make sure you have the latest version from the commit rather than the latest tagged version so that your client code is up to date with what is in staging:
 
@@ -30,6 +38,31 @@ client, err := ensign.New(&ensign.Options{
     ClientSecret: os.GetEnv("ENSIGN_CLIENT_SECRET"),
     AuthURL: "https://auth.ensign.world",
 })
+```
+
+If you're feeling extra, you can also use the `ensign.ninja:443` endpoint which is an alias for `staging.ensign.world:443`.
+
+### Python Snippet
+
+If you're working with PyEnsign in staging, make sure you have the latest version from the commit rather than the latest tagged version so that your client code is up to date with what is in staging:
+
+```bash
+$ pip install git+https://github.com/rotationalio/pyensign.git@develop
+```
+
+By default the PyEnsign client connects to the Ensign production environment. To connect to Staging you need to specify the staging endpoints in your credentials:
+
+```python
+import os
+
+from pyensign.ensign import Ensign
+
+client = Ensign(
+    endpoint="staging.ensign.world:443",
+    client_id=os.getenv("ENSIGN_CLIENT_ID),
+    client_secret=os.getenv("ENSIGN_CLIENT_SECRET),
+    auth_url="https://auth.ensign.world"
+)
 ```
 
 If you're feeling extra, you can also use the `ensign.ninja:443` endpoint which is an alias for `staging.ensign.world:443`.
