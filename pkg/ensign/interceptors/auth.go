@@ -109,7 +109,7 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 	if hub := sentry.GetHubFromContext(ctx); hub != nil {
 		var remoteIP string
 		if remote, ok := peer.FromContext(ctx); ok {
-			remoteIP = remote.Addr.String()
+			remoteIP = UserIP(remote.Addr)
 
 		}
 
