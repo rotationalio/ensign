@@ -5,6 +5,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // UnaryInterceptor for gRPC services that are using Sentry. Ensures that Sentry is used
@@ -35,6 +37,12 @@ func UnaryInterceptor(conf Config) grpc.UnaryServerInterceptor {
 		defer sentryRecovery(hub, ctx, repanic)
 		rep, err := handler(ctx, req)
 		if reportErrors && err != nil {
+			if level := errorLevel(err); level != sentry.LevelError {
+				hub.ConfigureScope(func(scope *sentry.Scope) {
+					scope.SetLevel(level)
+				})
+			}
+
 			hub.CaptureException(err)
 		}
 		return rep, err
@@ -73,6 +81,12 @@ func StreamInterceptor(conf Config) grpc.StreamServerInterceptor {
 
 		err = handler(srv, stream)
 		if reportErrors && err != nil {
+			if level := errorLevel(err); level != sentry.LevelError {
+				hub.ConfigureScope(func(scope *sentry.Scope) {
+					scope.SetLevel(level)
+				})
+			}
+
 			hub.CaptureException(err)
 		}
 
@@ -86,5 +100,16 @@ func sentryRecovery(hub *sentry.Hub, ctx context.Context, repanic bool) {
 		if repanic {
 			panic(err)
 		}
+	}
+}
+
+func errorLevel(err error) sentry.Level {
+	switch status.Code(err) {
+	case codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.Unauthenticated:
+		return sentry.LevelInfo
+	case codes.DeadlineExceeded, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange, codes.Unavailable:
+		return sentry.LevelWarning
+	default:
+		return sentry.LevelError
 	}
 }
