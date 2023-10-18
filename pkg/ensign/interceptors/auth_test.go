@@ -2,6 +2,7 @@ package interceptors_test
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -160,4 +161,24 @@ func TestAuthenticator(t *testing.T) {
 		require.Equal(t, health.HealthCheckResponse_SERVING, hb.Status)
 	})
 
+}
+
+func TestUserIP(t *testing.T) {
+	testCases := []struct {
+		addr     net.Addr
+		expected string
+	}{
+		{&net.TCPAddr{IP: net.ParseIP("192.168.0.1")}, "192.168.0.1"},
+		{&net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 17821}, "192.168.0.1"},
+		{&net.TCPAddr{IP: net.ParseIP("c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4")}, "c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4"},
+		{&net.TCPAddr{IP: net.ParseIP("c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4"), Port: 17821}, "c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4"},
+		{&net.TCPAddr{IP: net.ParseIP("c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4"), Port: 17821, Zone: "1"}, "c266:8bf2:145e:3cb9:9f9e:2a24:ed17:b4e4"},
+		{&net.UDPAddr{IP: net.ParseIP("192.168.0.1")}, "192.168.0.1"},
+		{&net.UDPAddr{IP: net.ParseIP("192.168.0.1"), Port: 17821}, "192.168.0.1"},
+	}
+
+	for i, tc := range testCases {
+		actual := interceptors.UserIP(tc.addr)
+		require.Equal(t, tc.expected, actual, "test case %d failed", i)
+	}
 }
