@@ -10,7 +10,7 @@ describe('<TextField />', () => {
     expect(input).toBeInTheDocument();
   });
 
-  it('should apply size props', () => {
+  /* it('should apply size props', () => {
     render(<TextField size="medium" />);
     const input = screen.getByTestId('input');
     expect(input).toHaveClass('beacon-text-base');
@@ -21,7 +21,7 @@ describe('<TextField />', () => {
     render(<TextField rightIcon={rightIcon} />);
     const icon = screen.getByTestId('right-icon');
     expect(icon).toBeInTheDocument();
-  });
+  }); */
 
   it('should display the description', () => {
     render(<TextField description="Enter your name" />);

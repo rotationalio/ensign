@@ -1,4 +1,5 @@
 import { ModalUnstyledOwnProps } from '@mui/base/ModalUnstyled';
+
 import { TSize } from '../../types';
 
 export type ModalProps = {
