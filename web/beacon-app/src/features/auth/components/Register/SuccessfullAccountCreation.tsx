@@ -3,7 +3,7 @@ import { Button, Card, Heading } from '@rotational/beacon-core';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { ROUTES } from '@/application';
+import { EXTERNAL_LINKS, ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 import useResendEmail from '@/hooks/useResendEmail';
 
@@ -63,7 +63,7 @@ function SuccessfullAccountCreation() {
                   Didn't receive an email?{' '}
                   <span className="font-bold text-[#1F4CED]">Resend the verification email</span> or
                   email{' '}
-                  <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
+                  <a href={`mailto:${EXTERNAL_LINKS.SUPPORT}`} className="font-bold text-[#1F4CED]">
                     support@rotational.io
                   </a>
                   .

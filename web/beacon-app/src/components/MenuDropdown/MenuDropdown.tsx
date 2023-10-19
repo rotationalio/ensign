@@ -35,13 +35,13 @@ const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdow
                 key={`${label}-${i}`}
                 onClick={onClick}
                 className={clsx(
-                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
+                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-base outline-none',
                   'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                 )}
               >
                 {icon}
                 <span className="flex-grow text-gray-700 dark:text-gray-300">{label}</span>
-                {shortcut && <span className="text-xs">{shortcut}</span>}
+                {shortcut && <span className="text-base">{shortcut}</span>}
               </DropdownMenuPrimitive.Item>
             ))}
 
@@ -49,7 +49,7 @@ const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdow
               <DropdownMenuPrimitive.Item
                 onClick={items?.logoutMenuItem?.onClick}
                 className={clsx(
-                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
+                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-base outline-none',
                   'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                 )}
               >
