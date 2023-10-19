@@ -1,44 +1,59 @@
 import { Given, Then, When, And } from 'cypress-cucumber-preprocessor/steps';
 
-Given('I am on the Beacon homepage', () => {
-  cy.loginWith( { email: 'test7@test.com', password:'Abc123Def$56'})
+beforeEach(function () {
+  cy.fixture('user').then((user) => {
+      this.user = user;
+  });
+})
+
+Given('I am on the Beacon homepage', function () {
+  cy.loginWith( { email: this.user.email, password: this.user.password })
 });
 
 When('I\'m logged in', () => {
   cy.url().should('include', 'app')
-    cy.getCookies().should('exist')
-    cy.getCookie('bc_atk').should('exist')
 });
 
-Then('I should see an avatar', () => {
-  cy.get('[data-testid="avatar"]').should('exist')
-  cy.get('[data-testid="avatar"]').invoke('attr', 'src').should('contain', 'https://www.gravatar.com/')
+Then('I should see the org name', function () {
+  cy.get('[data-cy="org-name"]').should('exist').and('have.text', this.user.org_name)
 });
 
-And('I should see an org name', () => {
-  cy.get('[data-testid="orgName"]').should('exist').should('have.text', 'GoldTeam')
+And('I should see an avatar', () => {
+  cy.get('[data-cy="avatar"]').should('exist')
+});
+
+When('I click on the avatar', () => {
+  cy.get('[data-cy="avatar"]').click()
+});
+
+Then('I should see a list of orgs I belong to', function () {
+  cy.findByRole('menuitem').eq(0).should('have.text', this.user.org_two)
+  cy.findByRole('menuitem').eq(1).should('have.text', this.user.org_three)
 });
 
 And('I should see Projects in the sidebar', () => {
   cy.contains('div', 'Projects').should('be.visible')
-})
+});
 
 And('I should see Team in the sidebar', () => {
   cy.contains('div', 'Team').should('be.visible')
-})
-
-And('I should see a link to Docs in the sidebar', () => {
-    cy.contains('a', 'Docs').should('have.text', 'Docs ')
-  });
-
-  And('I should see a link to Support in the sidebar', () => {
-    cy.contains('a', 'Support').should('have.text', 'Support')
-  });
-
+});
 
 And('I should see a link to Profile in the sidebar', () => {
-    cy.contains('a', 'Profile').should('have.text', 'Profile ')
-  });
+  cy.contains('a', 'Profile').should('have.text', 'Profile ')
+});
+
+And('I should see Ensign U in the sidebar', () => {
+  cy.contains('a', 'Ensign U').should('have.text', 'Ensign U ')
+});
+
+And('I should see a link to Docs in the sidebar', () => {
+  cy.contains('a', 'Docs').should('have.text', 'Docs ')
+});
+
+And('I should see a link to Support in the sidebar', () => {
+  cy.contains('a', 'Support').should('have.text', 'Support')
+});
 
 And('I should see a link to the About page in the sidebar footer', () => {
     cy.get('ul li:first').should('have.text', 'About ')

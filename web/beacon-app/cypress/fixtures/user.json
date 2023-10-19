@@ -1,6 +1,9 @@
 {
-  "email": "",
-  "password": "",
+  "email": "danielle@rotational.io",
+  "password": "Abc123Def$567",
+  "org_name": "XFactor",
+  "org_two": "Team X",
+  "org_three": "Dream Team",
   "projects": {
     "id": " ",
     "name": " "

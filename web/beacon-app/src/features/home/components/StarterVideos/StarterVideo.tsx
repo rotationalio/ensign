@@ -37,13 +37,17 @@ const StarterVideos = () => {
   };
 
   return (
-    <div className="starter-videos">
+    <div className="starter-videos" data-cy="starter-videos">
       <Heading as="h1" className="pt-10 text-lg font-semibold">
         <Trans>Starter Videos</Trans>
       </Heading>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {STARTER_VIDEOS.map((video, idx) => (
-          <button onClick={() => openVideoHandler(video)} key={idx}>
+          <button
+            onClick={() => openVideoHandler(video)}
+            key={idx}
+            data-cy={`starter-video-${idx}`}
+          >
             <StarterVideo
               key={video.title}
               preview_image={video.preview_image}

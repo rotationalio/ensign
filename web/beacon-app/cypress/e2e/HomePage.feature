@@ -5,18 +5,18 @@ I want to navigate the Beacon main page
 Scenario: Navigating the Beacon main page
     Given I am on the Beacon homepage
     When I'm logged in
-    Then I should see an avatar
-    And I should see an org name
+    Then I should see the org name
+    And I should see an avatar
     And I should see Projects in the sidebar
     And I should see Team in the sidebar
-    And I should see a link to Profile in the sidebar
+    And I should see Profile in the sidebar
 
-    And I should see a link to Ensign U in the sidebar
-    And I should see a link to Use Cases in the sidebar
-    And I should see a link to Docs in the sidebar
-    And I should see a link to Data Playground in the sidebar
-    And I should see a link to SDKs in the sidebar
-    And I should see a link to Support in the sidebar
+    And I should see Ensign U in the sidebar
+    And I should see Use Cases in the sidebar
+    And I should see Docs in the sidebar
+    And I should see Data Playground in the sidebar
+    And I should see SDKs in the sidebar
+    And I should see Support in the sidebar
 
     And I should see a link to the About page in the sidebar footer
     Then I should be able to visit the About page if I click the link
