@@ -3,11 +3,17 @@ function path(root: string, sublink: string) {
 }
 const ROOT = '/app';
 
+/* ROUTES CONSTANTS
+
+ * ROUTES are used in the following files to define the routes of the application
+ * PATH_DASHBOARD is used in the following files to define the routes of the dashboard
+ * EXTERNAL_LINKS are used in the following files to define the external links of the application
+
+ */
+
 export const ROUTES = {
   HOME: '/',
   DASHBOARD: '/dashboard',
-  DOCS: 'https://ensign.rotational.dev/getting-started/',
-  SUPPORT: 'support@rotational.io',
   PROFILE: '/profile',
   WELCOME: '/welcome',
   SETUP: '/onboarding/setup',
@@ -21,10 +27,6 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   RESET_VERIFICATION: '/reset-verification',
-  DATA_PLAYGROUND: 'https://rotational.io/data-playground/',
-  SDK_DOCUMENTATION: 'https://ensign.rotational.dev/sdk',
-  ENSIGN_UNIVERSITY: 'https://rotational.io/blog/',
-  USE_CASES: 'https://ensign.rotational.dev/eventing/use_cases/',
 };
 
 export const PATH_DASHBOARD = {
@@ -61,6 +63,11 @@ export const EXTERNAL_LINKS = {
   ENSQL: 'https://ensign.rotational.dev/ensql/',
   OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
   DATA_FLOW_OVERVIEW: 'https://www.youtube.com/watch?v=XUnEHGZXxmM&t=1600s',
-  DATA_PLAYGROUND: 'https://rotational.io/data-playground/',
   NAMING_TOPICS_GUIDE: 'https://ensign.rotational.dev/getting-started/topics/',
+  DATA_PLAYGROUND: 'https://rotational.io/data-playground/',
+  SDK_DOCUMENTATION: 'https://ensign.rotational.dev/sdk',
+  ENSIGN_UNIVERSITY: 'https://rotational.io/blog/',
+  USE_CASES: 'https://ensign.rotational.dev/eventing/use_cases/',
+  DOCS: 'https://ensign.rotational.dev/getting-started/',
+  SUPPORT: 'support@rotational.io',
 };
