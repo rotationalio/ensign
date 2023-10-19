@@ -73,6 +73,7 @@ func (s *Server) Rehash(ctx context.Context, topicID ulid.ULID, policy *api.Dedu
 
 	// Build the bloom filter for deduplication
 	filter := bloom.NewWithEstimates(uint(info.Events), filterFPRate)
+	policy = policy.Normalize()
 
 	// Reset the topicInfo duplicate counts now that we've created the filter
 	// NOTE: the next time the topic info gatherer is run, it will seek to the event ID
@@ -109,55 +110,59 @@ deduplication:
 			break deduplication
 		}
 
-		// Compute the hash of the event given the deduplication policy
-		hash, err := event.Hash(policy)
-		if err != nil {
-			return err
-		}
-
-		// Check if the event is a duplicate of another event already
-		if filter.TestOrAdd(hash) {
-			// Load the identified duplicate, verify that it is a duplicate
-			var target *api.EventWrapper
-			if target, err = s.data.Unhash(topicID, hash); err != nil {
+		// If none then skip over the deduplication checking step.
+		if policy.Strategy != api.Deduplication_NONE {
+			// Compute the hash of the event given the deduplication policy
+			hash, err := event.Hash(policy)
+			if err != nil {
 				return err
 			}
 
-			var isDuplicate bool
-			if isDuplicate, err = event.Duplicates(target, policy); err != nil {
+			// Check if the event is a duplicate of another event already
+			if filter.TestOrAdd(hash) {
+				// Load the identified duplicate, verify that it is a duplicate
+				var target *api.EventWrapper
+				if target, err = s.data.Unhash(topicID, hash); err != nil {
+					return err
+				}
+
+				var isDuplicate bool
+				if isDuplicate, err = event.Duplicates(target, policy); err != nil {
+					return err
+				}
+
+				if isDuplicate {
+					// Mark the event as a duplicate and save back to database
+					// TODO: handle offset -- e.g. is the target the duplicate or the event?
+					if err = event.DuplicateOf(target, policy); err != nil {
+						return err
+					}
+
+					// Save the duplicate back to the database
+					if err = s.data.Insert(event); err != nil {
+						return err
+					}
+
+					// Update the duplicate counts on the topic info
+					info.Duplicates++
+					if e, err := event.Unwrap(); err == nil {
+						etype := info.FindEventTypeInfo(e.ResolveType(), e.Mimetype)
+						etype.Duplicates++
+					}
+
+					// NOTE: We assume that everything from this point on in the loop that
+					// the event is not a duplicate and should be treated as original.
+					continue deduplication
+				}
+			}
+
+			// If the topic is not a duplicate store the hash in the database.
+			if err := s.data.Indash(topicID, hash, rlid.RLID(event.Id)); err != nil {
 				return err
 			}
-
-			if isDuplicate {
-				// Mark the event as a duplicate and save back to database
-				// TODO: handle offset -- e.g. is the target the duplicate or the event?
-				if err = event.DuplicateOf(target, policy); err != nil {
-					return err
-				}
-
-				// Save the duplicate back to the database
-				if err = s.data.Insert(event); err != nil {
-					return err
-				}
-
-				// Update the duplicate counts on the topic info
-				info.Duplicates++
-				if e, err := event.Unwrap(); err == nil {
-					etype := info.FindEventTypeInfo(e.ResolveType(), e.Mimetype)
-					etype.Duplicates++
-				}
-
-				// NOTE: We assume that everything from this point on in the loop that
-				// the event is not a duplicate and should be treated as original.
-				continue deduplication
-			}
 		}
 
-		// If the topic is not a duplicate store the hash in the database.
-		if err := s.data.Indash(topicID, hash, rlid.RLID(event.Id)); err != nil {
-			return err
-		}
-
+		// From this point on, we assume that the event is not a duplicate.
 		// Ensure the topic is not marked as a duplicate; if it is, mark it as a non-duplicate.
 		if event.IsDuplicate {
 			var orig *api.EventWrapper

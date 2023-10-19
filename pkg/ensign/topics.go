@@ -379,7 +379,7 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 	// Update duplicates in the topic info and rehash the events.
 	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		// Rehash the topic
-		if err := s.Rehash(ctx, topicID, topic.Deduplication); err != nil {
+		if err := s.Rehash(ctx, topicID, policy); err != nil {
 			return err
 		}
 
