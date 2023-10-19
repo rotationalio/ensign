@@ -2,6 +2,7 @@ package interceptors
 
 import (
 	"context"
+	"net"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
@@ -108,7 +109,8 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 	if hub := sentry.GetHubFromContext(ctx); hub != nil {
 		var remoteIP string
 		if remote, ok := peer.FromContext(ctx); ok {
-			remoteIP = remote.Addr.String()
+			remoteIP = UserIP(remote.Addr)
+
 		}
 
 		hub.Scope().SetUser(sentry.User{
@@ -153,4 +155,18 @@ func (a *Authenticator) Stream() grpc.StreamServerInterceptor {
 func (a *Authenticator) isPublic(route string) bool {
 	_, ok := a.publicRoutes[route]
 	return ok
+}
+
+func UserIP(addr net.Addr) string {
+	// If this is a TCP ip address then handle it directly
+	if tcpaddr, ok := addr.(*net.TCPAddr); ok {
+		return tcpaddr.IP.String()
+	}
+
+	// Try parsing the IP address the hard way
+	ipaddr := addr.String()
+	if host, _, err := net.SplitHostPort(ipaddr); err == nil {
+		return host
+	}
+	return ipaddr
 }

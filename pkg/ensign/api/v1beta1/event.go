@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
@@ -51,13 +52,34 @@ func (w *EventWrapper) ParseTopicID() (topicID ulid.ULID, err error) {
 	return topicID, nil
 }
 
-// Parwse the eventID on the event wrapper as an RLID.
+// Parse the eventID on the event wrapper as an RLID.
 func (w *EventWrapper) ParseEventID() (eventID rlid.RLID, err error) {
 	eventID = rlid.RLID{}
 	if err = eventID.UnmarshalBinary(w.Id); err != nil {
 		return eventID, err
 	}
 	return eventID, nil
+}
+
+// Equals compares two events in wrappers to see if they are identical using event
+// equality. This is essentially a shortcut for unwrapping the two events and comparing
+// them directly.
+func (w *EventWrapper) Equals(o *EventWrapper) bool {
+	event, err := o.Unwrap()
+	if err != nil {
+		return false
+	}
+	return w.EqualsEvent(event)
+}
+
+// Equals compares a wrapped event to an wrapped event to see if the wrapped event is
+// identical using event equality. This is a shortcut for unwrapping the wrapped event.
+func (w *EventWrapper) EqualsEvent(o *Event) bool {
+	event, err := w.Unwrap()
+	if err != nil {
+		return false
+	}
+	return event.Equals(o)
 }
 
 //===========================================================================
@@ -203,4 +225,14 @@ func (t *Type) Equals(o *Type) bool {
 // patch versions are equal to zero.
 func (t *Type) IsZero() bool {
 	return (t.Name == "" || t.Name == Unspecified) && t.MajorVersion == 0 && t.MinorVersion == 0 && t.PatchVersion == 0
+}
+
+// Repr returns the string representation of the type.
+func (t *Type) Repr() string {
+	return fmt.Sprintf("%s v%d.%d.%d", t.Name, t.MajorVersion, t.MinorVersion, t.PatchVersion)
+}
+
+// Semver returns the semantic version of the type.
+func (t *Type) Semver() string {
+	return fmt.Sprintf("%d.%d.%d", t.MajorVersion, t.MinorVersion, t.PatchVersion)
 }

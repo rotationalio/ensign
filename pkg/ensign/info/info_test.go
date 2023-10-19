@@ -11,6 +11,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/info"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/stretchr/testify/require"
@@ -18,12 +19,11 @@ import (
 )
 
 func TestInfoGather(t *testing.T) {
-	t.Skip("not fully implemented yet")
-
-	// This test works in three phases. In the first phase, there is nothing in the
+	// This test works in four phases. In the first phase, there is nothing in the
 	// database and gather is run. In the second phase, topics are added, some with
 	// events and some without events. In the third phase, all topics have events and
-	// some topics have more events.
+	// some topics have more events. In the fourth phase, all topics have events but
+	// some topics hve duplicate events.
 
 	// Setup the database and the gatherer
 	events, topics := createDatabase(t)
@@ -44,6 +44,13 @@ func TestInfoGather(t *testing.T) {
 	wg.Wait()
 	checkPhase1(t, topics)
 
+	// Execute phase 2: events with duplicates in the database
+	setupPhase2(t, events, topics)
+	wg = &sync.WaitGroup{}
+	err = gatherer.Gather(wg)
+	require.NoError(t, err, "could not execute phase 2 gather")
+	wg.Wait()
+	checkPhase2(t, topics)
 }
 
 func TestInfoGatherFatal(t *testing.T) {
@@ -114,8 +121,8 @@ func checkPhase0(t *testing.T, topics store.TopicInfoStore) {
 	require.Zero(t, count, "expected no topic info in the database")
 }
 
-func setupPhase1(t *testing.T, eventDB store.EventStore, topicDB store.MetaStore) {
-	topics, events := loadFixture(t, "testdata/phase1.json")
+func setupPhaseN(t *testing.T, path string, eventDB store.EventStore, topicDB store.MetaStore) {
+	topics, events := loadFixture(t, path)
 	for _, topic := range topics {
 		err := topicDB.CreateTopic(topic)
 		require.NoError(t, err, "could not create topic in database")
@@ -127,42 +134,15 @@ func setupPhase1(t *testing.T, eventDB store.EventStore, topicDB store.MetaStore
 	}
 }
 
-func checkPhase1(t *testing.T, topics store.TopicInfoStore) {
-	expected := map[string]*api.TopicInfo{
-		"01GTSMQ3V8ASAPNCFEN378T8RD": {
-			TopicId:       ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD").Bytes(),
-			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
-			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
-			Events:        0,
-			Duplicates:    0,
-			DataSizeBytes: 0,
-			Types:         []*api.EventTypeInfo{},
-		},
-		"01GTSMSX1M9G2Z45VGG4M12WC0": {
-			TopicId:       ulid.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0").Bytes(),
-			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
-			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
-			Events:        10,
-			Duplicates:    0,
-			DataSizeBytes: 0x7a1,
-			Types: []*api.EventTypeInfo{
-				{},
-				{},
-			},
-		},
-		"01GTSN1139JMK1PS5A524FXWAZ": {
-			TopicId:       ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ").Bytes(),
-			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
-			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
-			Events:        2,
-			Duplicates:    0,
-			DataSizeBytes: 0x145,
-			Types: []*api.EventTypeInfo{
-				{},
-			},
-		},
-	}
+func setupPhase1(t *testing.T, eventDB store.EventStore, topicDB store.MetaStore) {
+	setupPhaseN(t, "testdata/phase1.json", eventDB, topicDB)
+}
 
+func setupPhase2(t *testing.T, eventDB store.EventStore, topicDB store.MetaStore) {
+	setupPhaseN(t, "testdata/phase2.json", eventDB, topicDB)
+}
+
+func checkPhaseN(t *testing.T, expected map[string]*api.TopicInfo, topics store.TopicInfoStore) {
 	count := 0
 	iter := topics.ListAllTopics()
 	defer iter.Release()
@@ -195,9 +175,9 @@ func checkPhase1(t *testing.T, topics store.TopicInfoStore) {
 
 		for _, aeti := range info.Types {
 			eeti := expectedInfo.FindEventTypeInfo(aeti.Type, aeti.Mimetype)
-			require.Equal(t, eeti.Events, aeti.Events, "%s type events mismatch", eeti.Type.String())
-			require.Equal(t, eeti.Duplicates, aeti.Duplicates, "%s type duplicates mismatch", eeti.Type.String())
-			require.Equal(t, eeti.DataSizeBytes, aeti.DataSizeBytes, "%s type data size mismatch", eeti.Type.String())
+			require.Equal(t, eeti.Events, aeti.Events, "%s (%s) type events mismatch", aeti.Type.Repr(), aeti.Mimetype)
+			require.Equal(t, eeti.Duplicates, aeti.Duplicates, "%s (%s) type duplicates mismatch", aeti.Type.Repr(), aeti.Mimetype)
+			require.Equal(t, eeti.DataSizeBytes, aeti.DataSizeBytes, "%s (%s) type data size mismatch", aeti.Type.Repr(), aeti.Mimetype)
 		}
 
 		count++
@@ -206,6 +186,127 @@ func checkPhase1(t *testing.T, topics store.TopicInfoStore) {
 	err := iter.Error()
 	require.NoError(t, err, "could not iterate over topics in store")
 	require.Equal(t, len(expected), count, "expected topic infos for each topic in the database")
+}
+
+func checkPhase1(t *testing.T, topics store.TopicInfoStore) {
+	expected := map[string]*api.TopicInfo{
+		"01GTSMQ3V8ASAPNCFEN378T8RD": {
+			TopicId:       ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        0,
+			Duplicates:    0,
+			DataSizeBytes: 0,
+			Types:         []*api.EventTypeInfo{},
+		},
+		"01GTSMSX1M9G2Z45VGG4M12WC0": {
+			TopicId:       ulid.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        10,
+			Duplicates:    0,
+			DataSizeBytes: 0x7a1,
+			Types: []*api.EventTypeInfo{
+				{
+					Type:          &api.Type{Name: "RandomOrder", MajorVersion: 2},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        3,
+					Duplicates:    0,
+					DataSizeBytes: 0x22d,
+				},
+				{
+					Type:          &api.Type{Name: "RandomOrder", MajorVersion: 1, MinorVersion: 9, PatchVersion: 2},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        7,
+					Duplicates:    0,
+					DataSizeBytes: 0x574,
+				},
+			},
+		},
+		"01GTSN1139JMK1PS5A524FXWAZ": {
+			TopicId:       ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        2,
+			Duplicates:    0,
+			DataSizeBytes: 0x145,
+			Types: []*api.EventTypeInfo{
+				{
+					Type:          &api.Type{Name: "RandomShipment", MajorVersion: 1},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        2,
+					Duplicates:    0,
+					DataSizeBytes: 0x145,
+				},
+			},
+		},
+	}
+	checkPhaseN(t, expected, topics)
+}
+
+func checkPhase2(t *testing.T, topics store.TopicInfoStore) {
+	expected := map[string]*api.TopicInfo{
+		"01GTSMQ3V8ASAPNCFEN378T8RD": {
+			TopicId:       ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        0,
+			Duplicates:    0,
+			DataSizeBytes: 0,
+			Types:         []*api.EventTypeInfo{},
+		},
+		"01GTSMSX1M9G2Z45VGG4M12WC0": {
+			TopicId:       ulid.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        11,
+			Duplicates:    1,
+			DataSizeBytes: 0x80f,
+			Types: []*api.EventTypeInfo{
+				{
+					Type:          &api.Type{Name: "RandomOrder", MajorVersion: 2},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        3,
+					Duplicates:    0,
+					DataSizeBytes: 0x22d,
+				},
+				{
+					Type:          &api.Type{Name: "RandomOrder", MajorVersion: 1, MinorVersion: 9, PatchVersion: 2},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        8,
+					Duplicates:    1,
+					DataSizeBytes: 0x5e2,
+				},
+			},
+		},
+		"01GTSN1139JMK1PS5A524FXWAZ": {
+			TopicId:       ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        2,
+			Duplicates:    0,
+			DataSizeBytes: 0x145,
+			Types: []*api.EventTypeInfo{
+				{
+					Type:          &api.Type{Name: "RandomShipment", MajorVersion: 1},
+					Mimetype:      mimetype.MIME_UNSPECIFIED,
+					Events:        2,
+					Duplicates:    0,
+					DataSizeBytes: 0x145,
+				},
+			},
+		},
+		"01GTSN1WF5BA0XCPT6ES64JVGQ": {
+			TopicId:       ulid.MustParse("01GTSN1WF5BA0XCPT6ES64JVGQ").Bytes(),
+			ProjectId:     ulid.MustParse("01GTSMZNRYXNAZQF5R8NHQ14NM").Bytes(),
+			EventOffsetId: []byte{0x1, 0x89, 0xec, 0x33, 0x51, 0x60, 0x0, 0x0, 0x0, 0xa},
+			Events:        0,
+			Duplicates:    0,
+			DataSizeBytes: 0,
+			Types:         []*api.EventTypeInfo{},
+		},
+	}
+	checkPhaseN(t, expected, topics)
 }
 
 func loadFixture(t *testing.T, path string) ([]*api.Topic, []*api.EventWrapper) {

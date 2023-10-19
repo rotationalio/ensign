@@ -12,7 +12,10 @@ import (
 	"github.com/oklog/ulid/v2"
 	. "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
+	region "github.com/rotationalio/ensign/pkg/ensign/region/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -593,12 +596,126 @@ func TestHashUniqueField(t *testing.T) {
 	}
 }
 
+func TestDuplicateReferencing(t *testing.T) {
+	setPublisherBravo := func(w *EventWrapper) {
+		w.Region = region.Region_LKE_EU_WEST_1A
+		w.Publisher = &Publisher{
+			PublisherId: "01HD1M0AVDVHPA4WA73MAA7NH7",
+			Ipaddr:      "192.148.21.133",
+			ClientId:    "data-ingestor-bravo",
+			UserAgent:   "Go-Ensign v0.11.0",
+		}
+	}
+
+	clone := func(t *testing.T, w *EventWrapper) *EventWrapper {
+		data, err := proto.Marshal(w)
+		require.NoError(t, err, "could not marshal event")
+
+		o := &EventWrapper{}
+		err = proto.Unmarshal(data, o)
+		require.NoError(t, err, "could not unmarshal event")
+		return o
+	}
+
+	execTest := func(t *testing.T, evt, dup *EventWrapper, policy *Deduplication) {
+		// Clone the duplicate for comparison purposes.
+		org := clone(t, dup)
+
+		// Mark the dup as a duplicate of evt
+		err := dup.DuplicateOf(evt, policy)
+		require.NoError(t, err, "could not take duplicate of event")
+		require.True(t, dup.IsDuplicate)
+		require.Equal(t, evt.Id, dup.DuplicateId)
+		require.NotNil(t, dup.Event, "expected event data remaining")
+		require.Less(t, len(dup.Event), len(evt.Event), "expected the duplicate event size to be reduced")
+		require.NotEqual(t, evt.Committed, dup.Committed, "expected committed timestamp to still differ")
+		require.False(t, proto.Equal(org, dup), "expected the duplicate event to be modified")
+
+		// Restore the duplicate from the original event
+		err = dup.DuplicateFrom(evt)
+		require.NoError(t, err, "could restore duplicate from event")
+		require.True(t, org.Equals(dup), "expected event to be equal after duplicate resoration")
+	}
+
+	t.Run("Strict", func(t *testing.T) {
+		evt := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T09:41:19-05:00")
+		dup := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T16:32:21-05:00")
+		setPublisherBravo(dup)
+
+		// Clone the duplicate for comparison purposes.
+		org := clone(t, dup)
+
+		// Mark the dup as a duplicate of evt
+		err := dup.DuplicateOf(evt, &Deduplication{Strategy: Deduplication_STRICT})
+		require.NoError(t, err, "could not take duplicate of event")
+		require.True(t, dup.IsDuplicate)
+		require.Equal(t, evt.Id, dup.DuplicateId)
+		require.Nil(t, dup.Event, "expected event data to be nil")
+		require.Nil(t, dup.Encryption, "expected encryption to be nil")
+		require.Nil(t, dup.Compression, "expected compression to be nil")
+		require.NotEqual(t, evt.Committed, dup.Committed, "expected committed timestamp to still differ")
+		require.False(t, proto.Equal(org, dup), "expeced the duplicate event to be modified")
+
+		// Restore the duplicate from the original event
+		err = dup.DuplicateFrom(evt)
+		require.NoError(t, err, "could restore duplicate from event")
+		require.True(t, org.Equals(dup), "expected event to be equal after duplicate resoration")
+	})
+
+	t.Run("Datagram", func(t *testing.T) {
+		evt := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T09:41:19-05:00")
+		dup := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T16:32:21-05:00")
+		setPublisherBravo(dup)
+		execTest(t, evt, dup, &Deduplication{Strategy: Deduplication_DATAGRAM})
+	})
+
+	t.Run("Datagram_Metadata", func(t *testing.T) {
+		evt := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T09:41:19-05:00")
+		dup := mkwevt("tgRkJ4Q2otHC/wJFpePDd+YLwkBQPefGPzfldeIzZKz2wvzfFvNuUrifU7E7ritvFKUcmxW0aR8uGOVTNq1jBA==", "foo:bar,color:blue,jack:jones", mimetype.MIME_APPLICATION_JSON, "TestVersion 1.4.4", "2023-10-18T16:32:21-05:00")
+		setPublisherBravo(dup)
+		execTest(t, evt, dup, &Deduplication{Strategy: Deduplication_DATAGRAM})
+	})
+
+	t.Run("KeyGrouped", func(t *testing.T) {
+		// TODO: implement this test!
+		t.Skip("not implemented yet")
+	})
+
+	t.Run("UniqueKey", func(t *testing.T) {
+		evt := mkwevt("VzcrPlcPKWG/dapHfLnfiA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T09:41:19-05:00")
+		dup := mkwevt("VzcrPlcPKWG/dapHfLnfiA==", "foo:bar,color:blue,jack:jones", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T16:32:21-05:00")
+		setPublisherBravo(dup)
+		execTest(t, evt, dup, &Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"foo"}})
+	})
+
+	t.Run("UniqueKey_Data", func(t *testing.T) {
+		evt := mkwevt("VzcrPlcPKWG/dapHfLnfiA==", "foo:bar,color:red", mimetype.MIME_APPLICATION_BSON, "TestVersion 1.2.3", "2023-10-18T09:41:19-05:00")
+		dup := mkwevt("64azNXY/sTehGqN3Fk7kbw==", "foo:bar,color:red,jack:jones", mimetype.MIME_APPLICATION_JSON, "TestVersion 1.4.4", "2023-10-18T16:32:21-05:00")
+		setPublisherBravo(dup)
+		execTest(t, evt, dup, &Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"foo"}})
+	})
+
+	t.Run("UniqueField", func(t *testing.T) {
+		// TODO: implement this test!
+		t.Skip("not implemented yet")
+	})
+}
+
 func TestDeduplicationEquals(t *testing.T) {
 	testCases := []struct {
 		alpha  *Deduplication
 		bravo  *Deduplication
 		assert require.BoolAssertionFunc
 	}{
+		{
+			nil, nil, require.True,
+		},
+		{
+			nil, &Deduplication{}, require.False,
+		},
+		{
+			&Deduplication{}, nil, require.False,
+		},
 		{
 			&Deduplication{}, &Deduplication{}, require.True,
 		},
@@ -665,10 +782,15 @@ func TestDeduplicationEquals(t *testing.T) {
 }
 
 func TestDeduplicationNormalize(t *testing.T) {
+
 	testCases := []struct {
 		in       *Deduplication
 		expected *Deduplication
 	}{
+		{
+			nil,
+			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
+		},
 		{
 			&Deduplication{},
 			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
@@ -707,28 +829,36 @@ func TestDeduplicationNormalize(t *testing.T) {
 		},
 	}
 
-	for i, tc := range testCases {
-		tc.in.Normalize()
-		require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
+	t.Run("InPlace", func(t *testing.T) {
+		for i, tc := range testCases[1:] {
+			tc.in.Normalize()
+			require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
 
-		// Default Invariants
-		require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
-		require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
+			// Default Invariants
+			require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
+			require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
 
-		// Strategy Based Invariants
-		switch tc.in.Strategy {
-		case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
-			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-		case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
-			require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-		case Deduplication_UNIQUE_FIELD:
-			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
-			require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			// Strategy Based Invariants
+			switch tc.in.Strategy {
+			case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+				require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+				require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			case Deduplication_UNIQUE_FIELD:
+				require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+				require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			}
 		}
+	})
 
-	}
+	t.Run("Returned", func(t *testing.T) {
+		for i, tc := range testCases {
+			actual := tc.in.Normalize()
+			require.Equal(t, tc.expected, actual, "test case %d failed", i)
+		}
+	})
 }
 
 const fixturePath = "testdata/events.json"
@@ -833,13 +963,29 @@ func generateFixtures() (err error) {
 	return nil
 }
 
+var seq rlid.Sequence
+
 // Helper to quickly make event wrappers with a topicID and committed timestamp, using a
 // similar methodology to mkevt to generate the underlying event.
 func mkwevt(data, kvs string, mime mimetype.MIME, etype, created string) *EventWrapper {
 	event := mkevt(data, kvs, mime, etype, created)
+	eventID := seq.Next()
+
 	wrap := &EventWrapper{
+		Id:        eventID.Bytes(),
 		TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
 		Committed: timestamppb.Now(),
+		Offset:    uint64(eventID.Sequence()),
+		Epoch:     uint64(0xe1),
+		Region:    region.Region_LKE_US_EAST_1A,
+		Publisher: &Publisher{
+			PublisherId: "01HD1KY309F3SHSV1M89GSQBDF",
+			Ipaddr:      "192.168.1.1",
+			ClientId:    "data-ingestor-alpha",
+			UserAgent:   "PyEnsign v0.12.0",
+		},
+		Encryption:  &Encryption{EncryptionAlgorithm: Encryption_PLAINTEXT},
+		Compression: &Compression{Algorithm: Compression_NONE},
 	}
 	wrap.Wrap(event)
 	return wrap
@@ -858,7 +1004,23 @@ func createRandomEvent(mime mimetype.MIME, etype, meta string) *EventWrapper {
 		}
 	}
 
-	wrap := &EventWrapper{}
+	eventID := seq.Next()
+	wrap := &EventWrapper{
+		Id:        eventID.Bytes(),
+		TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
+		Committed: timestamppb.Now(),
+		Offset:    uint64(eventID.Sequence()),
+		Epoch:     uint64(0xe1),
+		Region:    region.Region_LKE_US_EAST_1A,
+		Publisher: &Publisher{
+			PublisherId: "01HD1KY309F3SHSV1M89GSQBDF",
+			Ipaddr:      "192.168.1.1",
+			ClientId:    "data-ingestor-alpha",
+			UserAgent:   "PyEnsign v0.12.0",
+		},
+		Encryption:  &Encryption{EncryptionAlgorithm: Encryption_PLAINTEXT},
+		Compression: &Compression{Algorithm: Compression_NONE},
+	}
 	wrap.Wrap(event)
 	return wrap
 }

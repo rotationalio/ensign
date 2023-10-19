@@ -46,6 +46,58 @@ func (s *readonlyEventsTestSuite) TestIndash() {
 	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on indash")
 }
 
+func (s *eventsTestSuite) TestUnhash() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load fixtures")
+	defer s.ResetDatabase()
+
+	s.Run("Happy", func() {
+		topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+		hash, _ := base64.RawStdEncoding.DecodeString("ZYoBI+8RmyL/K4DNYRgGZg")
+		eventID := rlid.MustParse("064yrcthc0000004").Bytes()
+
+		event, err := s.store.Unhash(topicID, hash)
+		require.NoError(err, "could not unhash event")
+		require.NotNil(event, "a nil event was reteurned")
+		require.Equal(eventID, event.Id)
+	})
+
+	s.Run("NotFound", func() {
+		topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+		hash, _ := base64.RawStdEncoding.DecodeString("vKVUKp4k4EMz8TKaWgAvlQ")
+
+		_, err := s.store.Unhash(topicID, hash)
+		require.ErrorIs(err, errors.ErrNotFound)
+	})
+}
+
+func (s *readonlyEventsTestSuite) TestUnhash() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	s.Run("Happy", func() {
+		topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+		hash, _ := base64.RawStdEncoding.DecodeString("ZYoBI+8RmyL/K4DNYRgGZg")
+		eventID := rlid.MustParse("064yrcthc0000004").Bytes()
+
+		event, err := s.store.Unhash(topicID, hash)
+		require.NoError(err, "could not unhash event")
+		require.NotNil(event, "a nil event was reteurned")
+		require.Equal(eventID, event.Id)
+	})
+
+	s.Run("NotFound", func() {
+		topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+		hash, _ := base64.RawStdEncoding.DecodeString("vKVUKp4k4EMz8TKaWgAvlQ")
+
+		_, err := s.store.Unhash(topicID, hash)
+		require.ErrorIs(err, errors.ErrNotFound)
+	})
+}
+
 func (s *eventsTestSuite) TestLoadIndash() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
