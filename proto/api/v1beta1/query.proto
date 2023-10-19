@@ -6,6 +6,7 @@ package ensign.v1beta1;
 message Query {
     string query = 1;
     repeated Parameter params = 2;
+    bool include_duplicates = 3;
 }
 
 // Parameter holds a primitive value for passing as a placeholder to a sqlite query.

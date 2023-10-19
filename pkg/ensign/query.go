@@ -91,7 +91,7 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 		}
 
 		// Skip over duplicates unless specified by the query
-		if event.IsDuplicate {
+		if !in.IncludeDuplicates && event.IsDuplicate {
 			continue
 		}
 
