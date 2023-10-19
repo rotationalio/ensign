@@ -338,16 +338,18 @@ func (w *EventWrapper) DuplicateOf(o *EventWrapper, policy *Deduplication) (err 
 	w.DuplicateId = o.Id
 
 	// Remove fields as necessary to reduce the storage load of the database.
-	// In STRICT mode - simply set the event to nil so we're not storing that data.
+	// STRICT policy - simply set the event to nil so we're not storing that data.
 	// Since there will be no encryption or compression, set those to nil as well.
 	// NOTE: this strategy will cause us to lose the created timestamp from the event,
 	// though the committed timestamp on the wrapper will still be kept.
 	//
-	// TODO: create a policy where a user can allow the data to be nilified even if
-	// it is not in strict mode in order to free up space using uniqueness
-	// constraints. This will prevent reconstituting the original event data, but
-	// could reduce the amount of storage in the database overall.
-	if policy.Strategy == Deduplication_STRICT {
+	// OverwriteDuplicate  policy - set the event, encryption, and compression to nil,
+	// which will cause us to lose any differencing information no matter the policy.
+	//
+	// For all other policies - attempt to keep as much differencing information as
+	// possible so that the event can be reconstructed as close to the original as
+	// possible if the deduplication policy changes.
+	if policy.Strategy == Deduplication_STRICT || policy.OverwriteDuplicate {
 		w.Event = nil
 		w.Encryption = nil
 		w.Compression = nil
