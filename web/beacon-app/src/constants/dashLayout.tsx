@@ -1,8 +1,10 @@
 import { t, Trans } from '@lingui/macro';
 import { AiOutlineHome, AiOutlineProject, AiOutlineTeam } from 'react-icons/ai';
+import { BsCodeSlash } from 'react-icons/bs';
 import { CgProfile } from 'react-icons/cg';
-import { HiOutlineDocument } from 'react-icons/hi';
-import { MdOutlineContactSupport } from 'react-icons/md';
+import { HiOutlineDocument, HiOutlineLightBulb } from 'react-icons/hi';
+import { IoSchool } from 'react-icons/io5';
+import { MdOutlineContactSupport, MdOutlinePermDataSetting } from 'react-icons/md';
 
 import { EXTERNAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
@@ -27,9 +29,27 @@ export const menuItems: MenuItem[] = [
     icon: <AiOutlineTeam fontSize={24} />,
     href: PATH_DASHBOARD.TEAMS,
   },
+  {
+    name: t`Profile`,
+    icon: <CgProfile fontSize={24} />,
+    href: PATH_DASHBOARD.PROFILE,
+    dropdownItems: [],
+  },
 ];
 
 export const otherMenuItems: MenuItem[] = [
+  {
+    name: t`Ensign U`,
+    icon: <IoSchool fontSize={24} />,
+    href: ROUTES.ENSIGN_UNIVERSITY,
+    isExternal: true,
+  },
+  {
+    name: t`Use Cases`,
+    icon: <HiOutlineLightBulb fontSize={24} />,
+    href: ROUTES.USE_CASES,
+    isExternal: true,
+  },
   {
     name: t`Docs`,
     icon: <HiOutlineDocument fontSize={24} />,
@@ -37,17 +57,24 @@ export const otherMenuItems: MenuItem[] = [
     isExternal: true,
   },
   {
+    name: t`Data Playground`,
+    icon: <MdOutlinePermDataSetting fontSize={24} />,
+    href: ROUTES.DATA_PLAYGROUND,
+    isExternal: true,
+  },
+  {
+    name: t`SDKs`,
+    icon: <BsCodeSlash fontSize={24} />,
+    href: ROUTES.SDK_DOCUMENTATION,
+    isExternal: true,
+  },
+
+  {
     name: t`Support`,
     icon: <MdOutlineContactSupport fontSize={24} />,
     href: ROUTES.SUPPORT,
     isExternal: true,
     isMail: true,
-  },
-  {
-    name: t`Profile`,
-    icon: <CgProfile fontSize={24} />,
-    href: PATH_DASHBOARD.PROFILE,
-    dropdownItems: [],
   },
 ];
 
