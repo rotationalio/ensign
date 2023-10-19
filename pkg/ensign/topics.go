@@ -101,10 +101,9 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
-	// Set topic default policies if they are not set on the topic
-	if in.Deduplication == nil || in.Deduplication.Strategy == api.Deduplication_UNKNOWN {
-		in.Deduplication = &api.Deduplication{Strategy: api.Deduplication_NONE}
-	}
+	// Normalize the deduplication policy
+	// NOTE: this will also convert a nil deduplication policy into the default one.
+	in.Deduplication = in.Deduplication.Normalize()
 
 	// TODO: set the topic status as pending
 
@@ -380,7 +379,7 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 	// Update duplicates in the topic info and rehash the events.
 	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		// Rehash the topic
-		if err := s.Rehash(ctx, topicID, topic.Deduplication); err != nil {
+		if err := s.Rehash(ctx, topicID, policy); err != nil {
 			return err
 		}
 
