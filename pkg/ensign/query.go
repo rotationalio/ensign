@@ -90,6 +90,11 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 			continue
 		}
 
+		// Skip over duplicates unless specified by the query
+		if event.IsDuplicate {
+			continue
+		}
+
 		// TODO: evaluate WHERE clause
 		if err = stream.Send(event); err != nil {
 			if streamClosed(err) {

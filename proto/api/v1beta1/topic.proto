@@ -142,6 +142,15 @@ message Deduplication {
     // Keys and fields for the KEY_GROUPED, UNIQUE_KEY, and UNIQUE_FIELD strategies.
     repeated string keys = 3;
     repeated string fields = 4;
+
+    // If overwrite_duplicate is true (default false) then the duplicate event is
+    // completely overwritten by the original event including differences in metadata,
+    // type, mimetype, and even the created timestamp (though the committed timestamp
+    // and provenance information will remain the same). This policy can significantly
+    // reduce data storage but may cause loss of data if the deduplication policy
+    // changes (if false, deduplication attempts to preserve as much information as
+    // possible in the case where the policy may change).
+    bool overwrite_duplicate = 5;
 }
 
 // Placement represents the nodes and regions a topic is assigned to for routing.

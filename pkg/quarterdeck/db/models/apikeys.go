@@ -35,9 +35,9 @@ type APIKey struct {
 	Source      sql.NullString
 	UserAgent   sql.NullString
 	LastUsed    sql.NullString
+	Revoked     sql.NullString
 	Partial     bool
 	status      APIKeyStatus
-	revoked     bool
 	permissions []string
 }
 
@@ -252,7 +252,7 @@ func populateAPIKey(tx *sql.Tx, key *APIKey) (err error) {
 
 const (
 	deleteAPIKeySQL = "DELETE FROM api_keys WHERE id=:id AND organization_id=:orgID"
-	revokeAPIKeySQL = "INSERT INTO revoked_api_keys VALUES (:id, :keyID, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :permissions, :created, :modified)"
+	revokeAPIKeySQL = "INSERT INTO revoked_api_keys VALUES (:id, :keyID, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :permissions, :created, :modified, :revoked)"
 )
 
 // DeleteAPIKey by ID restricted to the organization ID supplied. E.g. in order to
@@ -277,6 +277,7 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 	if err = populateAPIKey(tx, key); err != nil {
 		return err
 	}
+	key.SetRevoked()
 
 	var result sql.Result
 	if result, err = tx.Exec(deleteAPIKeySQL, sql.Named("id", id), sql.Named("orgID", orgID)); err != nil {
@@ -292,7 +293,7 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 	}
 
 	// Insert into the revoked_api_keys_table
-	params := make([]any, 12)
+	params := make([]any, 13)
 	params[0] = sql.Named("id", key.ID)
 	params[1] = sql.Named("keyID", key.KeyID)
 	params[2] = sql.Named("name", key.Name)
@@ -302,14 +303,15 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 	params[6] = sql.Named("source", key.Source)
 	params[7] = sql.Named("userAgent", key.UserAgent)
 	params[8] = sql.Named("lastUsed", key.LastUsed)
-	params[9] = sql.Named("created", key.Created)
-	params[10] = sql.Named("modified", key.Modified)
+	params[9] = sql.Named("revoked", key.Revoked)
+	params[10] = sql.Named("created", key.Created)
+	params[11] = sql.Named("modified", key.Modified)
 
 	var permissions []byte
 	if permissions, err = json.Marshal(key.permissions); err != nil {
 		return err
 	}
-	params[11] = sql.Named("permissions", string(permissions))
+	params[12] = sql.Named("permissions", string(permissions))
 
 	if _, err = tx.Exec(revokeAPIKeySQL, params...); err != nil {
 		return err
@@ -566,8 +568,9 @@ func (k *APIKey) Validate() error {
 func (k *APIKey) Status() APIKeyStatus {
 	if k.status == APIKeyStatusUnknown {
 		lastUsed, _ := k.GetLastUsed()
+		revoked, _ := k.GetRevoked()
 		switch {
-		case k.revoked:
+		case !revoked.IsZero():
 			k.status = APIKeyStatusRevoked
 		case lastUsed.IsZero():
 			k.status = APIKeyStatusUnused
@@ -594,6 +597,24 @@ func (k *APIKey) SetLastUsed(ts time.Time) {
 	k.LastUsed = sql.NullString{
 		Valid:  true,
 		String: ts.Format(time.RFC3339Nano),
+	}
+}
+
+// GetRevoked returns the parsed Revoked timestamp if it is not null. If it is null
+// then a zero-valued timestamp is returned without an error.
+func (k *APIKey) GetRevoked() (time.Time, error) {
+	if k.Revoked.Valid {
+		return time.Parse(time.RFC3339Nano, k.Revoked.String)
+	}
+	return time.Time{}, nil
+}
+
+// Set the revoked timestamp on an API key. This only sets the timestamp and does not
+// actually revoke the key.
+func (k *APIKey) SetRevoked() {
+	k.Revoked = sql.NullString{
+		Valid:  true,
+		String: time.Now().Format(time.RFC3339Nano),
 	}
 }
 

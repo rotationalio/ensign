@@ -97,7 +97,7 @@ func (s *Store) Retrieve(topicId ulid.ULID, eventID rlid.RLID) (event *api.Event
 
 	var data []byte
 	if data, err = s.db.Get(key[:], nil); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err)
 	}
 
 	event = &api.EventWrapper{}

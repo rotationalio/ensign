@@ -181,13 +181,13 @@ func (t *TopicInfoGatherer) handleTopic(topic *api.Topic) (err error) {
 		events.Seek(eventID)
 	}
 
+eventLoop:
 	for events.Next() {
 		// Fetch the raw data from the iterator rather than parsing the event wrapper
 		// so that we can compute the raw data size of the event.
 		data := events.Value()
 		dataSize := uint64(len(data))
 
-		// TODO: check if the event is a duplicate
 		info.Events++
 		info.DataSizeBytes += dataSize
 
@@ -195,11 +195,29 @@ func (t *TopicInfoGatherer) handleTopic(topic *api.Topic) (err error) {
 		event := &api.EventWrapper{}
 		if err = proto.Unmarshal(data, event); err != nil {
 			sentry.Warn(nil).Err(err).Bytes("eventKey", events.Key()).Msg("could not unmarshal event")
-			continue
+			continue eventLoop
 		}
 
 		// Store the last ID on the topic info so that we can seek to the next event
 		info.EventOffsetId = event.Id
+
+		// Check if the event is a duplicate
+		if event.IsDuplicate {
+			info.Duplicates++
+
+			// Rehydrate the event from the original to ensure mime and event type
+			// correctly compute the duplication if needed.
+			var target *api.EventWrapper
+			if target, err = t.events.Retrieve(topicID, rlid.RLID(event.DuplicateId)); err != nil {
+				sentry.Warn(nil).Err(err).Bytes("targetKey", event.DuplicateId).Msg("could not retreive target of duplicate event")
+				continue eventLoop
+			}
+
+			if err = event.DuplicateFrom(target); err != nil {
+				sentry.Warn(nil).Err(err).Bytes("targetKey", event.DuplicateId).Msg("could not dereferecnce duplicate")
+				continue eventLoop
+			}
+		}
 
 		// Unwrap the event to perform type checking.
 		var e *api.Event
@@ -210,10 +228,12 @@ func (t *TopicInfoGatherer) handleTopic(topic *api.Topic) (err error) {
 
 		// Update the event type info on the info
 		// NOTE: ResolveType() returns Unspecified if the event does not have a type.
-		// TODO: handle duplicates
 		etypeinfo := info.FindEventTypeInfo(e.ResolveType(), e.Mimetype)
 		etypeinfo.Events++
 		etypeinfo.DataSizeBytes += dataSize
+		if event.IsDuplicate {
+			etypeinfo.Duplicates++
+		}
 	}
 
 	if err = events.Error(); err != nil {
