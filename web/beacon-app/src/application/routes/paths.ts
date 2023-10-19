@@ -3,13 +3,15 @@ function path(root: string, sublink: string) {
 }
 const ROOT = '/app';
 
-/* ROUTES CONSTANTS
+/* ROUTES CONSTANTS 
 
- * ROUTES are used in the following files to define the routes of the application
- * PATH_DASHBOARD is used in the following files to define the routes of the dashboard
- * EXTERNAL_LINKS are used in the following files to define the external links of the application
+ * - ROUTES are used in the following files to define the routes of the application
+ * - PATH_DASHBOARD is used in the following files to define the routes of the dashboard
+ * - EXTERNAL_LINKS are used in the following files to define the external links of the application and came be found in external links file in the constants folder
 
  */
+
+// TODO: Move the external links to a separate file in the constants folder, only routes should be here
 
 export const ROUTES = {
   HOME: '/',
