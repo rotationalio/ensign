@@ -9,8 +9,11 @@ import { ProjectDetailQuery } from '../types/projectService';
 export function useFetchProject(projectID: string): ProjectDetailQuery {
   const query = useQuery([RQK.PROJECT, projectID], () => projectRequest(axiosInstance)(projectID), {
     enabled: !!projectID,
-    onError: (error) => {
-      Sentry.captureException(error);
+    onError: (error: any) => {
+      // stop logging 401 & 403 errors to sentry
+      if (error.response.status !== 401 && error.response.status !== 403) {
+        Sentry.captureException(error);
+      }
     },
   });
 

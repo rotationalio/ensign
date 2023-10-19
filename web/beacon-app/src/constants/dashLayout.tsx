@@ -7,7 +7,7 @@ import { IoSchool } from 'react-icons/io5';
 import { MdOutlineContactSupport } from 'react-icons/md';
 import { TbPlayFootball } from 'react-icons/tb';
 
-import { EXTERNAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
+import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
 
 export const SIDEBAR_WIDTH = 250;
@@ -42,38 +42,38 @@ export const otherMenuItems: MenuItem[] = [
   {
     name: t`Ensign U`,
     icon: <IoSchool fontSize={24} />,
-    href: ROUTES.ENSIGN_UNIVERSITY,
+    href: EXTERNAL_LINKS.ENSIGN_UNIVERSITY,
     isExternal: true,
   },
   {
     name: t`Use Cases`,
     icon: <HiOutlineLightBulb fontSize={24} />,
-    href: ROUTES.USE_CASES,
+    href: EXTERNAL_LINKS.USE_CASES,
     isExternal: true,
   },
   {
     name: t`Docs`,
     icon: <HiOutlineDocument fontSize={24} />,
-    href: ROUTES.DOCS,
+    href: EXTERNAL_LINKS.DOCS,
     isExternal: true,
   },
   {
     name: t`Data Playground`,
     icon: <TbPlayFootball fontSize={24} />,
-    href: ROUTES.DATA_PLAYGROUND,
+    href: EXTERNAL_LINKS.DATA_PLAYGROUND,
     isExternal: true,
   },
   {
     name: t`SDKs`,
     icon: <BsCodeSlash fontSize={24} />,
-    href: ROUTES.SDK_DOCUMENTATION,
+    href: EXTERNAL_LINKS.SDK_DOCUMENTATION,
     isExternal: true,
   },
 
   {
     name: t`Support`,
     icon: <MdOutlineContactSupport fontSize={24} />,
-    href: ROUTES.SUPPORT,
+    href: EXTERNAL_LINKS.SUPPORT,
     isExternal: true,
     isMail: true,
   },
