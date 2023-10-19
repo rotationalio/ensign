@@ -4,7 +4,8 @@ import { BsCodeSlash } from 'react-icons/bs';
 import { CgProfile } from 'react-icons/cg';
 import { HiOutlineDocument, HiOutlineLightBulb } from 'react-icons/hi';
 import { IoSchool } from 'react-icons/io5';
-import { MdOutlineContactSupport, MdOutlinePermDataSetting } from 'react-icons/md';
+import { LiaOtterSolid } from 'react-icons/lia';
+import { MdOutlineContactSupport } from 'react-icons/md';
 
 import { EXTERNAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
@@ -58,7 +59,7 @@ export const otherMenuItems: MenuItem[] = [
   },
   {
     name: t`Data Playground`,
-    icon: <MdOutlinePermDataSetting fontSize={24} />,
+    icon: <LiaOtterSolid fontSize={24} />,
     href: ROUTES.DATA_PLAYGROUND,
     isExternal: true,
   },
