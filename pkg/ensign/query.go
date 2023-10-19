@@ -7,6 +7,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/ensql"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -74,6 +75,8 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 	defer events.Release()
 
 	// Skip over events in the offset
+	// NOTE: offset will include duplicates when skipping over ...
+	// TODO: this is very slow, we need to do a binary search for the offset instead.
 	if query.HasOffset {
 		for i := uint64(0); i < query.Offset; i++ {
 			if !events.Next() {
@@ -91,8 +94,23 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 		}
 
 		// Skip over duplicates unless specified by the query
-		if event.IsDuplicate {
+		if !in.IncludeDuplicates && event.IsDuplicate {
 			continue
+		}
+
+		// If we're including duplicates, and the event is a duplicate, then dereference
+		// the duplicate from the database so there is correct event information.
+		if event.IsDuplicate {
+			var target *api.EventWrapper
+			if target, err = s.data.Retrieve(topicID, rlid.RLID(event.DuplicateId)); err != nil {
+				sentry.Error(ctx).Bytes("duplicate_id", event.DuplicateId).Str("topic_id", topicID.String()).Msg("could not fetch duplicate reference target")
+				continue
+			}
+
+			if err = event.DuplicateFrom(target); err != nil {
+				sentry.Error(ctx).Bytes("duplicate_id", event.DuplicateId).Str("topic_id", topicID.String()).Msg("could not dereference duplicate event")
+				continue
+			}
 		}
 
 		// TODO: evaluate WHERE clause
