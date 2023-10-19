@@ -21,6 +21,10 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   RESET_VERIFICATION: '/reset-verification',
+  DATA_PLAYGROUND: 'https://rotational.io/data-playground/',
+  SDK_DOCUMENTATION: 'https://ensign.rotational.dev/sdk',
+  ENSIGN_UNIVERSITY: 'https://rotational.io/blog/',
+  USE_CASES: 'https://ensign.rotational.dev/eventing/use_cases/',
 };
 
 export const PATH_DASHBOARD = {

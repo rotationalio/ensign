@@ -8,7 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { appConfig } from '@/application/config';
 import ExternalIcon from '@/components/icons/external-icon';
-import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
+import { OrganizationMenuDropdown } from '@/components/MenuDropdown/OrganizationMenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
@@ -113,11 +113,13 @@ function SideBar({ className }: SidebarProps) {
                   </h1>
                 </div>
                 <div className="flex-end">
-                  <MenuDropdownMenu
-                    items={dropdownItems}
-                    onOpenChange={onOpenChange}
-                    isOpen={isOpen}
-                  />
+                  {dropdownItems?.organizationMenuItems?.length > 0 && (
+                    <OrganizationMenuDropdown
+                      items={dropdownItems}
+                      onOpenChange={onOpenChange}
+                      isOpen={isOpen}
+                    />
+                  )}
                 </div>
               </div>
             </ErrorBoundary>
