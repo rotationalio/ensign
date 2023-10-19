@@ -1,7 +1,6 @@
 /* eslint-disable unused-imports/no-unused-vars */
 /* eslint-disable jsx-a11y/alt-text */
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Link2Icon } from '@radix-ui/react-icons';
 import { clsx } from 'clsx';
 import React from 'react';
 interface RadixDropdownMenuProps {
@@ -11,10 +10,15 @@ interface RadixDropdownMenuProps {
   onOpenChange?: (isOpen: boolean) => void;
 }
 
-const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
+const OrganizationMenuDropdown = ({
+  items,
+  trigger,
+  isOpen,
+  onOpenChange,
+}: RadixDropdownMenuProps) => {
   //console.log('items menu', items);
   return (
-    <div className="relative">
+    <div className="relative mt-4">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuPrimitive.Trigger>
           <button className="border-none focus:ring-0">{trigger}</button>
@@ -30,35 +34,19 @@ const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdow
               'bg-white dark:bg-gray-800'
             )}
           >
-            {items?.generalMenuItems?.map(({ label, icon, shortcut, onClick }: any, i: any) => (
+            {items?.organizationMenuItems?.map(({ name, orgId, handleSwitch }: any, i: any) => (
               <DropdownMenuPrimitive.Item
-                key={`${label}-${i}`}
-                onClick={onClick}
+                onClick={() => handleSwitch(orgId)}
+                key={`${name}-${i}`}
                 className={clsx(
-                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
+                  'flex w-full cursor-default select-none items-center truncate rounded-md p-2 text-base outline-none',
                   'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                 )}
               >
-                {icon}
-                <span className="flex-grow text-gray-700 dark:text-gray-300">{label}</span>
-                {shortcut && <span className="text-xs">{shortcut}</span>}
+                <span className="text-gray-700 dark:text-gray-300">{name}</span>
               </DropdownMenuPrimitive.Item>
             ))}
 
-            {items?.logoutMenuItem && (
-              <DropdownMenuPrimitive.Item
-                onClick={items?.logoutMenuItem?.onClick}
-                className={clsx(
-                  'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
-                  'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
-                )}
-              >
-                <Link2Icon className="h-3.5 w-3.5 mr-2" />
-                <span className="flex-grow text-gray-700 dark:text-gray-300">
-                  {items?.logoutMenuItem?.label}
-                </span>
-              </DropdownMenuPrimitive.Item>
-            )}
             <DropdownMenuPrimitive.Arrow />
           </DropdownMenuPrimitive.Content>
         </DropdownMenuPrimitive.Portal>
@@ -67,4 +55,4 @@ const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdow
   );
 };
 
-export { MenuDropdownMenu };
+export { OrganizationMenuDropdown };

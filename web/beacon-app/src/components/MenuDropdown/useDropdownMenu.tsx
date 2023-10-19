@@ -81,6 +81,7 @@ const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiv
     name: org?.name || t`Untitled Team`,
     orgId: org.id,
     handleSwitch: handleSwitch(org.id) as any,
+    avatar: org?.profileUrl, // TODO: add picture to org model . ask @pdeziel for it
   }));
 
   const menuItems = {
