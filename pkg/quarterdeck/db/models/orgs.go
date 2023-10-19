@@ -411,6 +411,37 @@ func (o *Organization) Save(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+const (
+	deleteOrgSQL = "DELETE FROM organizations WHERE id=:id"
+)
+
+// Delete an organization from the database. If there are any API keys in the
+// organization then this will return a constraint error.
+func (o *Organization) Delete(ctx context.Context) (err error) {
+	if ulids.IsZero(o.ID) {
+		return ErrMissingModelID
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete the organization
+	if _, err = tx.Exec(deleteOrgSQL, sql.Named("id", o.ID)); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
+		return err
+	}
+
+	return tx.Commit()
+}
+
 // Validate that an organization is ready to be inserted or updated into the database.
 func (o *Organization) Validate() error {
 	if ulids.IsZero(o.ID) {
