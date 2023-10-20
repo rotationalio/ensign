@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"encoding/pem"
@@ -77,6 +78,26 @@ func main() {
 					Name:    "out",
 					Aliases: []string{"o"},
 					Usage:   "write the list as a CSV file to the specified path",
+				},
+			},
+		},
+		{
+			Name:     "orgs:cleanup",
+			Usage:    "remove organizations with no users from the database",
+			Category: "utility",
+			Action:   cleanupOrgs,
+			Before:   connectDB,
+			After:    closeDB,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "print organizations to be removed without actually removing them",
+				},
+				&cli.StringFlag{
+					Name:    "out",
+					Aliases: []string{"o"},
+					Usage:   "write the list of organizations to be removed as a CSV file to the specified path",
 				},
 			},
 		},
@@ -219,7 +240,93 @@ func listOrgs(c *cli.Context) (err error) {
 	return nil
 }
 
-func cleanupUsers(c *cli.Context) (err error) {
+func cleanupOrgs(c *cli.Context) (errs error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Setup the cleanup run
+	dry := c.Bool("dry-run")
+	var (
+		w   *csv.Writer
+		err error
+	)
+	if path := c.String("out"); path != "" {
+		var f *os.File
+		if f, err = os.Create(path); err != nil {
+			return cli.Exit(err, 1)
+		}
+		defer f.Close()
+
+		w = csv.NewWriter(f)
+		w.Write([]string{"ID", "Name", "Domain", "Projects", "Created", "Modified"})
+		defer w.Flush()
+	}
+	deleted := 0
+
+	// Get all stranded organizations in the database
+	stranded := make(map[ulid.ULID]*models.Organization)
+	orgCursor := pagination.New("", "", 100)
+
+	for orgCursor != nil {
+		var orgs []*models.Organization
+		if orgs, orgCursor, err = models.ListAllOrgs(ctx, orgCursor); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+	findStranded:
+		for _, org := range orgs {
+			// Get the users for this organization
+			userCursor := pagination.New("", "", 100)
+
+			for userCursor != nil {
+				var users []*models.User
+				if users, userCursor, err = models.ListOrgUsers(ctx, org.ID, userCursor); err != nil {
+					errs = errors.Join(errs, err)
+					continue findStranded
+				}
+
+				// If there are no users, add the organization to the list of stranded orgs
+				if len(users) == 0 {
+					stranded[org.ID] = org
+				}
+			}
+		}
+	}
+
+	// Remove all stranded organizations
+	for _, org := range stranded {
+		if w != nil {
+			w.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
+		}
+
+		if dry {
+			fmt.Printf("would remove org (%s) with name %s\n", org.ID.String(), org.Name)
+			continue
+		}
+
+		if err = org.Delete(ctx); err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+
+		fmt.Printf("removed org (%s) with name %s\n", org.ID.String(), org.Name)
+		deleted++
+	}
+
+	if errs != nil {
+		fmt.Println(errs.Error())
+	}
+
+	if dry {
+		fmt.Printf("would remove %d stranded organizations\n", len(stranded))
+	} else {
+		fmt.Printf("removed %d out of %d stranded organizations\n", deleted, len(stranded))
+	}
+
+	return nil
+}
+
+func cleanupUsers(c *cli.Context) (errs error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -231,19 +338,20 @@ func cleanupUsers(c *cli.Context) (err error) {
 	unverified := make(map[ulid.ULID]*models.User)
 	cursor := pagination.New("", "", 100)
 
-findUnverified:
+	var err error
 	for cursor != nil {
 		var users []*models.User
 		if users, cursor, err = models.ListAllUsers(ctx, cursor); err != nil {
 			return cli.Exit(err, 1)
 		}
 
+	findUnverified:
 		for _, user := range users {
 			// Only remove unverified users with verification expired
 			if !user.EmailVerified {
 				var expiresAt time.Time
 				if expiresAt, err = user.GetVerificationExpires(); err != nil {
-					err = errors.Join(err, err)
+					errs = errors.Join(errs, err)
 					continue findUnverified
 				}
 
@@ -256,47 +364,49 @@ findUnverified:
 
 	// Remove all unverified users
 	for _, user := range unverified {
-		if dry {
-			fmt.Printf("would remove user (%s) with email %s\n", user.ID.String(), user.Email)
-		}
-
 		// List all orgs for the user
 		var orgs []*models.Organization
 		if orgs, _, err = models.ListUserOrgs(ctx, user.ID, pagination.New("", "", 10)); err != nil {
-			err = errors.Join(err, err)
+			errs = errors.Join(errs, err)
 			continue
 		}
 
 		if len(orgs) == 0 {
-			err = errors.Join(err, fmt.Errorf("user (%s) has no organizations, why?", user.ID.String()))
+			errs = errors.Join(errs, fmt.Errorf("user (%s) has no organizations, why?", user.ID.String()))
 			continue
 		}
 
 		if len(orgs) > 1 {
-			err = errors.Join(err, fmt.Errorf("unverified user (%s) has more than one organization, why?", user.ID.String()))
+			errs = errors.Join(errs, fmt.Errorf("user (%s) has more than one organization, why?", user.ID.String()))
 			continue
 		}
 
 		if dry {
-			fmt.Printf("would remove org (%s) for user (%s)\n", orgs[0].ID.String(), user.ID.String())
+			fmt.Printf("would remove user (%s) with email %s\n", user.ID.String(), user.Email)
+			fmt.Printf("would remove org (%s) with name %s\n", orgs[0].ID.String(), orgs[0].Name)
 			continue
 		}
 
-		// Remove the user from the organization, this also deletes the user
-		if _, _, err = user.RemoveOrganization(ctx, orgs[0].ID, true); err != nil {
-			err = errors.Join(err, err)
+		// Delete the user
+		if err = deleteUser(ctx, user); err != nil {
+			errs = errors.Join(errs, err)
 			continue
 		}
 
 		fmt.Printf("removed user (%s) with email %s\n", user.ID.String(), user.Email)
-
-		// TODO: Remove organizations with no users
-
 		deleted++
+
+		// Delete their organization
+		if err = orgs[0].Delete(ctx); err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+
+		fmt.Printf("removed org (%s) with name %s\n", orgs[0].ID.String(), orgs[0].Name)
 	}
 
-	if err != nil {
-		fmt.Println(err.Error())
+	if errs != nil {
+		fmt.Println(errs.Error())
 	}
 
 	if dry {
@@ -306,6 +416,22 @@ findUnverified:
 	}
 
 	return nil
+}
+
+// Delete a user from the database.
+func deleteUser(ctx context.Context, user *models.User) (err error) {
+	// Delete the user and their org
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err = user.Delete(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func usage(c *cli.Context) (err error) {

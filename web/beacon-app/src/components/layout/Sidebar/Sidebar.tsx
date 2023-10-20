@@ -155,7 +155,7 @@ function SideBar({ className }: SidebarProps) {
               </div>
             </div>
           </div>
-          <div className="ml-8 space-y-3">
+          <div className="ml-8 mt-5 space-y-3">
             <ul className="space-y-1 text-xs text-white">
               {footerItems.map((item) => (
                 <li key={`${item.name}`}>

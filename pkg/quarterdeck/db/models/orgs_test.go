@@ -140,6 +140,38 @@ func (m *modelTestSuite) TestSaveOrg() {
 	require.ErrorIs(err, models.ErrNotFound)
 }
 
+func (m *modelTestSuite) TestDeleteOrg() {
+	require := m.Require()
+	ctx := context.Background()
+
+	m.Run("MissingID", func() {
+		org := &models.Organization{}
+		require.ErrorIs(org.Delete(ctx), models.ErrMissingModelID)
+	})
+
+	m.Run("APIKeyExists", func() {
+		// Should not be able to delete an organization with an API key
+		orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+		org, err := models.GetOrg(ctx, orgID)
+		require.NoError(err, "could not fetch org fixture from the database")
+		require.ErrorIs(org.Delete(ctx), models.ErrMissingRelation)
+	})
+
+	m.Run("HappyPath", func() {
+		defer m.ResetDB()
+
+		// Successfully delete an empty organization
+		orgID := ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+		org, err := models.GetOrg(ctx, orgID)
+		require.NoError(err, "could not fetch org fixture from the database")
+		require.NoError(org.Delete(ctx), "could not delete empty organization")
+
+		// Check that the organization was actually deleted
+		_, err = models.GetOrg(ctx, orgID)
+		require.ErrorIs(err, models.ErrNotFound)
+	})
+}
+
 func (m *modelTestSuite) TestListAllOrgs() {
 	require := m.Require()
 	ctx := context.Background()

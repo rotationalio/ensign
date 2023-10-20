@@ -68,7 +68,7 @@ export const EXTERNAL_LINKS = {
   NAMING_TOPICS_GUIDE: 'https://ensign.rotational.dev/getting-started/topics/',
   DATA_PLAYGROUND: 'https://rotational.io/data-playground/',
   SDK_DOCUMENTATION: 'https://ensign.rotational.dev/sdk',
-  ENSIGN_UNIVERSITY: 'https://rotational.io/blog/',
+  ENSIGN_UNIVERSITY: 'https://rotational.io/blog/welcome-to-ensign-u/',
   USE_CASES: 'https://ensign.rotational.dev/eventing/use_cases/',
   DOCS: 'https://ensign.rotational.dev/getting-started/',
   SUPPORT: 'support@rotational.io',

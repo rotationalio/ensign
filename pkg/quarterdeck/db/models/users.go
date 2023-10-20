@@ -719,7 +719,7 @@ const (
 // ListOrgUsers returns a paginated collection of users filtered by the orgID.
 // The orgID must be a valid non-zero value of type ulid.ULID,
 // a string representation of a type ulid.ULID, or a slice of bytes
-// The number of users resturned is controlled by the prevPage cursor.
+// The number of users returned is controlled by the prevPage cursor.
 // To return the first page with a default number of results pass nil for the prevPage;
 // Otherwise pass an empty page with the specified PageSize.
 // If the prevPage contains an EndIndex then the next page is returned.
@@ -1084,7 +1084,7 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (k
 	// If the user doesn't have any organizations then delete the user
 	if _, err = u.defaultOrganization(tx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			if err = u.delete(tx); err != nil {
+			if err = u.Delete(tx); err != nil {
 				return nil, "", err
 			}
 		} else {
@@ -1190,7 +1190,7 @@ const (
 // Delete the user from the database. This is normally not done directly but as a
 // result of removing the user from all their organizations.
 // TODO: Preserve the email address <> user ID mapping.
-func (u *User) delete(tx *sql.Tx) (err error) {
+func (u *User) Delete(tx *sql.Tx) (err error) {
 	if _, err = tx.Exec(deleteUserSQL, sql.Named("userID", u.ID)); err != nil {
 		return err
 	}
