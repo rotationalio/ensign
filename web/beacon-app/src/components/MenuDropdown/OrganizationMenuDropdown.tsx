@@ -7,6 +7,7 @@ interface RadixDropdownMenuProps {
   items: any;
   trigger?: React.ReactNode;
   isOpen?: boolean;
+  'data-cy'?: string;
   onOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -14,14 +15,15 @@ const OrganizationMenuDropdown = ({
   items,
   trigger,
   isOpen,
+  'data-cy': dataCy,
   onOpenChange,
 }: RadixDropdownMenuProps) => {
   //console.log('items menu', items);
   return (
     <div className="relative mt-4">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
-        <DropdownMenuPrimitive.Trigger>
-          <button className="border-none focus:ring-0">{trigger}</button>
+        <DropdownMenuPrimitive.Trigger className="border-none focus:ring-0">
+          {trigger}
         </DropdownMenuPrimitive.Trigger>
 
         <DropdownMenuPrimitive.Portal>
@@ -33,6 +35,7 @@ const OrganizationMenuDropdown = ({
               'shadow-md w-48 rounded-lg px-1.5 py-1 md:w-56',
               'bg-white dark:bg-gray-800'
             )}
+            data-cy={dataCy}
           >
             {items?.organizationMenuItems?.map(({ name, orgId, handleSwitch }: any, i: any) => (
               <DropdownMenuPrimitive.Item

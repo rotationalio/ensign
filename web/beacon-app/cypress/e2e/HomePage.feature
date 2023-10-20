@@ -6,34 +6,29 @@ Scenario: Navigating the Beacon main page
     Given I am on the Beacon homepage
     When I'm logged in
     Then I should see the org name
-    And I should see an avatar
-    And I should see Projects in the sidebar
-    And I should see Team in the sidebar
-    And I should see Profile in the sidebar
-
-    And I should see Ensign U in the sidebar
-    And I should see Use Cases in the sidebar
-    And I should see Docs in the sidebar
-    And I should see Data Playground in the sidebar
-    And I should see SDKs in the sidebar
-    And I should see Support in the sidebar
-
-    And I should see a link to the About page in the sidebar footer
-    Then I should be able to visit the About page if I click the link
-    And I should see a link to the Contact Us page in the sidebar footer
-    Then I should be able to visit the Contact Us page if I click the link
-    And I should see a link to the Server Status page in the sidebar footer
-    Then I should be able to visit the Server Status page if I click the link
+    And I should see an avatar in the sidebar
+    When I click on the avatar
+    Then I should see a list of orgs I belong to
     
-    And I should see the Welcome component
-    And I should see the welcome to Ensign video
+    When I click Projects in the sidebar
+    Then I should be taken to the Projects page
+    When I click Team in the sidebar
+    Then I should be taken to the Team page
+    When I click Profile in the sidebar
+    Then I should be taken to the Profile page
+
+    When I return to the home page
+    Then I should see external links in the sidebar
+    
+    When I see the Welcome component
+    Then I should see the Welcome to Ensign video
     When I click on the welcome video
     Then I should see a modal open with a playable version of the video
-    When I click the close button the modal
+    When I click the close button to close the modal
     Then I should not see the modal with the video
 
-    And I should see the Set Up A New Project component
-    And I should see the Create Project button
+    When I see the Set Up A New Project component
+    And I click the Create Project button
     When I click the Create Project button
     Then I should see the Create Project modal
     When I click the close button in the Create Project modal
@@ -46,11 +41,13 @@ Scenario: Navigating the Beacon main page
     When I click the close button the modal
     Then I should not see the modal with the video
 
-    And I should see the Schedule Office Hours icon
+    And I should see the Schedule Office Hours icon in the top bar
     Then I should see that I will be able to visit the Schedule Office Hours page if I click the icon
-    When I see the settings button
-    And I click the settings button
-    Then I should see the settings page
+    And I should see the menu icon in the top bar
+    When I click the memu icon
+    Then I should see settings in the menu
+    When I click settings
+    Then I should be taken to the settings page
     When I return to the main page
-    And I click the logout button
+    When I click the logout button in the menu
     Then I should be logged out of the Beacon home page

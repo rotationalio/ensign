@@ -119,6 +119,7 @@ function SideBar({ className }: SidebarProps) {
                       items={dropdownItems}
                       onOpenChange={onOpenChange}
                       isOpen={isOpen}
+                      data-cy="org-menu"
                     />
                   )}
                 </div>
