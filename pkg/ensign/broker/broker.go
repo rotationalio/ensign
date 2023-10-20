@@ -73,6 +73,8 @@ func (b *Broker) handleIncoming(inQ <-chan incoming, outQ chan<- *api.EventWrapp
 		// Create the publish result with the localID for handling
 		result := PublishResult{LocalID: incoming.event.LocalId}
 
+		// TODO: reject event if topic is in read-only mode or deleting.
+
 		// TODO: sequence RLIDs over topic offset instead of globally.
 		incoming.event.Id = seq.Next().Bytes()
 

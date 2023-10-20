@@ -21,6 +21,7 @@ const (
 	Insert          = "Insert"
 	List            = "List"
 	Retrieve        = "Retrieve"
+	Destroy         = "Destroy"
 	Indash          = "Indash"
 	Unhash          = "Unhash"
 	LoadIndash      = "LoadIndash"
@@ -51,6 +52,7 @@ type Store struct {
 	OnInsert          func(*api.EventWrapper) error
 	OnList            func(ulid.ULID) iterator.EventIterator
 	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
+	OnDestroy         func(ulid.ULID) error
 	OnIndash          func(ulid.ULID, []byte, rlid.RLID) error
 	OnUnhash          func(ulid.ULID, []byte) (*api.EventWrapper, error)
 	OnLoadIndash      func(ulid.ULID) iterator.IndashIterator
@@ -91,6 +93,7 @@ func (s *Store) Reset() {
 	s.OnInsert = nil
 	s.OnList = nil
 	s.OnRetrieve = nil
+	s.OnDestroy = nil
 	s.OnIndash = nil
 	s.OnUnhash = nil
 	s.OnLoadIndash = nil
@@ -216,10 +219,10 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
 			return nil, err
 		}
+	case Destroy:
+		s.OnDestroy = func(ulid.ULID) error { return err }
 	case Indash:
-		s.OnIndash = func(u ulid.ULID, b []byte, r rlid.RLID) error {
-			return err
-		}
+		s.OnIndash = func(ulid.ULID, []byte, rlid.RLID) error { return err }
 	case Unhash:
 		s.OnUnhash = func(u ulid.ULID, b []byte) (*api.EventWrapper, error) {
 			return nil, err
@@ -299,6 +302,14 @@ func (s *Store) Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrappe
 		return s.OnRetrieve(topicID, eventID)
 	}
 	return nil, errors.New("mock database cannot retrieve event")
+}
+
+func (s *Store) Destroy(topicID ulid.ULID) error {
+	s.incrCalls(Destroy)
+	if s.OnDestroy != nil {
+		return s.OnDestroy(topicID)
+	}
+	return errors.New("mock database cannot destroy events in topic")
 }
 
 func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error {

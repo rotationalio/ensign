@@ -57,6 +57,7 @@ type EventStore interface {
 	Insert(*api.EventWrapper) error
 	List(topicID ulid.ULID) iterator.EventIterator
 	Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error)
+	Destroy(topicID ulid.ULID) error
 }
 
 type EventHashStore interface {

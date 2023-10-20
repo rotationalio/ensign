@@ -2,6 +2,7 @@ package ensign
 
 import (
 	"context"
+	goerrs "errors"
 	"strings"
 	"time"
 
@@ -256,8 +257,12 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 		return nil, status.Error(codes.NotFound, "topic not found")
 	}
 
+	// If the topic state is not ready, then we cannot change the policy.
+	if topic.Status != api.TopicState_READY && topic.Status != api.TopicState_READONLY {
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot archive or destroy a topic that is in the %s state", topic.Status.String())
+	}
+
 	// TODO: send topic deletion to the placement service
-	// TODO: if destroy, create a job to delete all the data for the specified topic
 	// TODO: update broker to prevent any additional writes.
 
 	out = &api.TopicStatus{Id: topicID.String()}
@@ -272,14 +277,30 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 		}
 
 	case api.TopicMod_DESTROY:
+		// Update topic with the deleting state
 		out.State = api.TopicState_DELETING
-
-		if err = s.meta.DeleteTopic(topicID); err != nil {
-			sentry.Error(ctx).Err(err).Msg("could not delete topic from meta store")
+		if err = s.meta.UpdateTopic(topic); err != nil {
+			sentry.Error(ctx).Err(err).Msg("could not update topic as deleting")
 			return nil, status.Error(codes.Internal, "could not process delete topic request")
 		}
 
-		// TODO: queue a job to delete all events associated with the topic
+		// Queue a job to delete all events associated with the topic then the topic.
+		s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
+			var errs error
+			if err = s.data.Destroy(topicID); err != nil {
+				errs = goerrs.Join(errs, err)
+			}
+
+			if err = s.meta.DeleteTopic(topicID); err != nil {
+				errs = goerrs.Join(errs, err)
+			}
+
+			return errs
+		}), radish.WithErrorf("could not destroy topic %s", topicID),
+			radish.WithRetries(3),
+			radish.WithBackoff(backoff.NewConstantBackOff(10*time.Minute)),
+			radish.WithTimeout(30*time.Minute),
+		)
 	}
 
 	return out, nil
@@ -345,6 +366,16 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 
 	if !claims.ValidateProject(projectID) {
 		return nil, status.Error(codes.NotFound, "topic not found")
+	}
+
+	// If the topic is archived (e.g. readonly) then we cannot change the policy.
+	if topic.Readonly {
+		return nil, status.Error(codes.FailedPrecondition, "cannot change policies of an archived topic")
+	}
+
+	// If the topic state is not ready, then we cannot change the policy.
+	if topic.Status != api.TopicState_READY {
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot change a topic that is in the %s state", topic.Status.String())
 	}
 
 	// NOTE: updating the sharding strategy is currently not supported
