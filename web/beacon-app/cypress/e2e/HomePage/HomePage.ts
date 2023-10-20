@@ -61,45 +61,54 @@ When('I return to the home page', () => {
   cy.go('back')
 });
 
-Then('I should see external links in the sidebar', () => {
+Then('I should see external links in the sidebar', function () {
   cy.contains('a', 'Ensign U')
   .should('have.text', 'Ensign U ')
   .and('have.attr', 'href')
-  .and('eq', 'https://rotational.io/blog/')
+  .and('eq', this.user.homepage.sidebar_links.ensign_u)
 
   cy.contains('a', 'Use Cases')
   .should('have.text', 'Use Cases ')
   .and('have.attr', 'href')
-  .and('eq', 'https://ensign.rotational.dev/eventing/use_cases/')
+  .and('eq', this.user.homepage.sidebar_links.use_cases)
 
   cy.contains('a', 'Docs')
   .should('have.text', 'Docs ')
   .and('have.attr', 'href')
-  .and('eq', 'https://ensign.rotational.dev/getting-started/')
+  .and('eq', this.user.homepage.sidebar_links.docs)
 
   cy.contains('a', 'Data Playground')
   .should('have.text', 'Data Playground ')
   .and('have.attr', 'href')
-  .and('eq', 'https://rotational.io/data-playground/')
+  .and('eq', this.user.homepage.sidebar_links.data_playground)
 
   cy.contains('a', 'SDKs')
   .should('have.text', 'SDKs ')
   .and('have.attr', 'href')
-  .and('eq', 'https://ensign.rotational.dev/sdk')
+  .and('eq', this.user.homepage.sidebar_links.sdks)
 
   cy.contains('a', 'Support')
   .should('have.text', 'Support')
   .and('have.attr', 'href')
-  .and('eq', 'mailto:support@rotational.io')
+  .and('eq', this.user.homepage.sidebar_links.support)
 
   cy.get('ul li:first').should('have.text', 'About ')
-  cy.get('ul>li>a').eq(0).should('have.attr', 'href').and('eq', 'https://rotational.io/about')
+  cy.get('ul>li>a')
+  .eq(0)
+  .should('have.attr', 'href')
+  .and('eq', this.user.homepage.sidebar_links.about)
 
   cy.get('ul>li').eq(1).should('have.text', 'Contact Us ')
-  cy.get('ul>li>a').eq(1).should('have.attr', 'href').and('eq', 'https://rotational.io/contact')
+  cy.get('ul>li>a')
+  .eq(1)
+  .should('have.attr', 'href')
+  .and('eq', this.user.homepage.sidebar_links.contact)
 
   cy.get('ul>li').eq(2).should('have.text', 'Server Status ')
-  cy.get('ul>li>a').eq(2).should('have.attr', 'href').and('eq', 'https://status.rotational.dev/')
+  cy.get('ul>li>a')
+  .eq(2)
+  .should('have.attr', 'href')
+  .and('eq', this.user.homepage.sidebar_links.server_status)
 });
 
 When('I see the Welcome component', () => {
@@ -131,7 +140,7 @@ When('I see the Set Up A New Project component', () => {
 });
 
 And('I click the Create Project button', () => {
-  cy.get('[data-cy="create-project-bttn"]').should('be.visible').click()
+  cy.get('[data-cy="create-project-btn"]').should('be.visible').click()
 });
 
 Then('I should see the Create Project modal', () => {
@@ -162,8 +171,10 @@ When('I see the Schedule Office Hours icon in the top bar', () => {
   cy.get('[data-cy="office-hours"]').should('be.visible')
 });
 
-Then('I should see that I will be able to visit the Schedule Office Hours page if I click the icon', () => {
-  cy.get('[data-cy="office-hours-link"]').should('have.attr', 'href').and('eq', 'https://calendar.app.google/1r7PuDPzKp2jjHPX8')
+Then('I should see that I will be able to visit the Schedule Office Hours page if I click the icon', function () {
+  cy.get('[data-cy="office-hours-link"]')
+  .should('have.attr', 'href')
+  .and('eq', this.user.homepage.office_hours_link)
 });
 
 And('I should see the menu icon in the top bar', () => {

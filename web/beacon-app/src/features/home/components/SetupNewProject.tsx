@@ -42,7 +42,7 @@ function SetupNewProject() {
               size="medium"
               onClick={onOpenNewProjectModal}
               data-testid="set-new-project"
-              data-cy="create-project-bttn"
+              data-cy="create-project-btn"
             >
               <Trans>Create Project</Trans>
             </Button>
