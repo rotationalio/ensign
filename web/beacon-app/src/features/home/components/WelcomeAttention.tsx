@@ -6,8 +6,8 @@ import BCModalVideo from '@/components/common/Modal/BCModalVideos';
 import { Image } from '@/components/ui/Image';
 
 const welcomevideo = {
-  preview_image: 'https://i.ytimg.com/vi/wurObU34Kes/maxres1.jpg',
-  videoID: 'wurObU34Kes',
+  preview_image: 'https://i.ytimg.com/vi/AoNIMF8mRss/maxres1.jpg',
+  videoID: 'AoNIMF8mRss',
 };
 
 const WelcomeAttention = () => {
@@ -20,7 +20,7 @@ const WelcomeAttention = () => {
   return (
     <>
       <div
-        className="px-auto mb-8 mt-4 flex flex-col justify-between gap-4 space-x-10 rounded-md border border-black/30 bg-[#F7F9FB]  p-4 text-justify xl:flex-row"
+        className="px-auto  mt-4 flex flex-col justify-between gap-4 space-x-10 rounded-md border border-black/30 bg-[#F7F9FB]  p-4 text-justify xl:flex-row"
         data-cy="projWelcome"
       >
         <div className="flex flex-col space-y-10 sm:w-4/5">
