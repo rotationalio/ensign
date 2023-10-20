@@ -85,7 +85,7 @@ Then('I should see external links in the sidebar', () => {
   cy.contains('a', 'SDKs')
   .should('have.text', 'SDKs ')
   .and('have.attr', 'href')
-  .and('eq', 'https://ensign.rotational.dev/sdk/')
+  .and('eq', 'https://ensign.rotational.dev/sdk')
 
   cy.contains('a', 'Support')
   .should('have.text', 'Support')
@@ -111,7 +111,7 @@ Then('I should see the Welcome to Ensign video', () => {
 });
 
 When('I click on the welcome video', () => {
-  cy.get('[data-cy="welcome-video-bttn"]').should('be.visible').click()
+  cy.get('[data-cy="welcome-video-btn"]').should('be.visible').click()
 });
 
 Then('I should see a modal open with a playable version of the video', () => {
@@ -123,10 +123,10 @@ When('I click the close button to close the modal', () => {
 });
 
 Then('I should not see the modal with the video', () => {
-  cy.get('.modal-video').should('not.be.visible')
+  cy.get('.modal-video').should('not.exist')
 });
 
-When('I  see the Set Up A New Project component', () => {
+When('I see the Set Up A New Project component', () => {
   cy.get('[data-cy="setup-new-project"]').should('be.visible')
 });
 
@@ -134,20 +134,55 @@ And('I click the Create Project button', () => {
   cy.get('[data-cy="create-project-bttn"]').should('be.visible').click()
 });
 
-Then('I should see the create project modal', () => {
-    cy.get('[data-testid="newProjectModal"]').should('be.visible')
+Then('I should see the Create Project modal', () => {
+    cy.get('[data-cy="new-project-modal"]').should('be.visible')
 });
 
-When('I see the settings button', () => {
-  cy.get('[data-testid="menu"]').click()
+When('I click the close button in the Create Project modal', () => {
+  cy.get('[data-cy="new-project-modal"]').within(() => {
+    cy.get('button').eq(0).click()
+  });
+});
+
+Then('I should not see the Create Project modal', () => {
+  cy.get('[data-cy="new-project-modal"]').should('not.exist')
+});
+
+When('I see the Starter Videos component', () => {
+  cy.get('[data-cy="starter-videos"]').should('be.visible')
+});
+
+Then('I should see the starter videos', () => {
+  for (let i = 0; i < 6; i++) {
+    cy.get(`[data-cy="starter-video-${i}"]`).should('be.visible')
+  };
+});
+
+When('I see the Schedule Office Hours icon in the top bar', () => {
+  cy.get('[data-cy="office-hours"]').should('be.visible')
+});
+
+Then('I should see that I will be able to visit the Schedule Office Hours page if I click the icon', () => {
+  cy.get('[data-cy="office-hours-link"]').should('have.attr', 'href').and('eq', 'https://calendar.app.google/1r7PuDPzKp2jjHPX8')
+});
+
+And('I should see the menu icon in the top bar', () => {
+  cy.get('[data-cy="menu-dropdown"]').should('be.visible')
+});
+
+When('I click the memu icon', () => {
+  cy.get('[data-cy="menu-dropdown"]').click()
+});
+
+Then('I should see Settings in the menu', () => {
   cy.findByText('Settings').should('be.visible')
 });
 
-And('I click the settings button', () => {
+When('I click Settings', () => {
   cy.findByText('Settings').click()
 });
 
-Then('I should visit the settings page', () => {
+Then('I should be taken to the settings page', () => {
   cy.location('pathname').should('eq', '/app/profile')
 });
 
@@ -155,8 +190,8 @@ When('I return to the main page', () => {
   cy.go('back')
 });
 
-And('I click the logout button', () => {
-  cy.get('[data-testid="menu"]').click({force: true})
+And('I click the logout button in the menu', () => {
+  cy.get('[data-cy="menu-dropdown"]').click()
   cy.findByText('Logout').click()
 });
 

@@ -37,7 +37,7 @@ const WelcomeAttention = () => {
         </div>
 
         <div className="flex" data-cy="welcome-video">
-          <button onClick={videoModalHandler} data-cy="welcome-vid-bttn">
+          <button onClick={videoModalHandler} data-cy="welcome-video-btn">
             <Image
               src={welcomevideo.preview_image}
               alt="welcome video"
