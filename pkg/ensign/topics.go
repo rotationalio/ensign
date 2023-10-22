@@ -106,7 +106,9 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	// NOTE: this will also convert a nil deduplication policy into the default one.
 	in.Deduplication = in.Deduplication.Normalize()
 
+	// HACK: temporarily setting the topic status to ready until we have placement
 	// TODO: set the topic status as pending
+	in.Status = api.TopicState_READY
 
 	// Create the topic in the store: note that the store will validate the topic
 	if err = s.meta.CreateTopic(in); err != nil {

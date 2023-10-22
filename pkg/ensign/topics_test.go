@@ -161,6 +161,7 @@ func (s *serverTestSuite) TestCreateTopic() {
 		require.False(ulids.IsZero(ulids.MustParse(out.Id)))
 		require.Equal(ulids.MustParse(claims.ProjectID).Bytes(), out.ProjectId)
 		require.Equal(topic.Name, out.Name)
+		require.Equal(api.TopicState_READY, out.Status)
 		require.NotEmpty(out.Created)
 		require.NotEmpty(out.Modified)
 	}
@@ -300,7 +301,7 @@ func (s *serverTestSuite) TestDeleteTopic() {
 		s.GRPCErrorIs(err, codes.NotFound, "topic not found")
 
 		// Unhandled database exceptions should return an internal error
-		s.store.UseError(store.RetrieveTopic, fmt.Errorf("somehing very bad happened"))
+		s.store.UseError(store.RetrieveTopic, fmt.Errorf("something very bad happened"))
 		_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 		s.GRPCErrorIs(err, codes.Internal, "could not process delete topic request")
 
@@ -457,6 +458,8 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 		}
 		return nil
 	}
+	s.store.OnDestroy = func(ulid.ULID) error { return nil }
+	s.store.OnUpdateTopic = func(*api.Topic) error { return nil }
 
 	claims.Permissions = []string{permissions.DestroyTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
@@ -464,8 +467,10 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 
 	out, err := s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 	require.NoError(err, "could not execute happy path request")
-	require.Equal(1, s.store.Calls(store.DeleteTopic))
-	require.Zero(s.store.Calls(store.UpdateTopic))
+	require.Equal(1, s.store.Calls(store.UpdateTopic))
+	// TODO: test that destroy and delete topic are queued in the tasks.
+	// require.Equal(1, s.store.Calls(store.Destroy))
+	// require.Equal(1, s.store.Calls(store.DeleteTopic))
 	require.Equal(out.State, api.TopicState_DELETING)
 	require.Equal("01GTSMQ3V8ASAPNCFEN378T8RD", out.Id)
 }
