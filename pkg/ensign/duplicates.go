@@ -43,7 +43,7 @@ func (s *Server) TopicFilter(topicID ulid.ULID) (_ *bloom.BloomFilter, err error
 		var hash []byte
 		if hash, err = iter.Hash(); err != nil {
 			// NOTE: we are not skipping bad hashes because this would make it possible
-			// to miss duplicates -- however, it would be possible to relax this.
+			// to miss duplicates -- however, it could be possible to relax this.
 			return nil, err
 		}
 		filter.Add(hash)
