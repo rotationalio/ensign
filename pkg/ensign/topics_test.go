@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -334,6 +335,66 @@ func (s *serverTestSuite) TestDeleteTopic() {
 		require.NoError(err, "could not delete topic")
 		require.Equal(request.Id, rep.Id)
 		require.True(rep.State == api.TopicState_DELETING || rep.State == api.TopicState_READONLY)
+	}
+}
+
+func (s *serverTestSuite) TestDeleteTopicState() {
+	require := s.Require()
+
+	testCases := []struct {
+		state     api.TopicState
+		operation api.TopicMod_Operation
+		err       error
+	}{
+		{api.TopicState_READY, api.TopicMod_ARCHIVE, nil},
+		{api.TopicState_READY, api.TopicMod_DESTROY, nil},
+		{api.TopicState_READONLY, api.TopicMod_ARCHIVE, nil},
+		{api.TopicState_READONLY, api.TopicMod_DESTROY, nil},
+		{api.TopicState_UNDEFINED, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_UNDEFINED, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_DELETING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_DELETING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_PENDING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_PENDING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_ALLOCATING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_ALLOCATING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_REPAIRING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_REPAIRING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+	}
+
+	ctx := context.Background()
+	topicID := ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD")
+
+	// Authorize access
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		ProjectID:   "01GTSMMC152Q95RD4TNYDFJGHT",
+		Permissions: []string{"topics:edit", "topics:destroy"},
+	}
+
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	s.store.UseError(store.UpdateTopic, nil)
+
+	for i, tc := range testCases {
+		s.store.OnRetrieveTopic = func(topicID ulid.ULID) (*api.Topic, error) {
+			return &api.Topic{
+				Id:        topicID[:],
+				ProjectId: ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+				Status:    tc.state,
+			}, nil
+		}
+
+		_, err := s.client.DeleteTopic(ctx, &api.TopicMod{Id: topicID.String(), Operation: tc.operation}, mock.PerRPCToken(token))
+		if tc.err != nil {
+			require.Error(err, "expected an error on test case %d", i)
+			require.Equal(status.Code(tc.err), status.Code(err), "expected failed precondition on test case %d")
+		} else {
+			require.NoError(err, "expected no error on test case %d", i)
+		}
 	}
 }
 
