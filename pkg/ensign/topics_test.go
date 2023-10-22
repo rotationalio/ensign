@@ -23,7 +23,6 @@ import (
 func (s *serverTestSuite) TestListTopics() {
 	require := s.Require()
 	s.store.UseError(store.ListTopics, errors.ErrIterReleased)
-	defer s.store.Reset()
 
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -85,7 +84,6 @@ func (s *serverTestSuite) TestListTopics() {
 func (s *serverTestSuite) TestCreateTopic() {
 	require := s.Require()
 	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
-	defer s.store.Reset()
 
 	topic := &api.Topic{
 		ProjectId: ulids.MustBytes("01GQ7P8DNR9MR64RJR9D64FFNT"),
@@ -191,7 +189,6 @@ func (s *serverTestSuite) TestCreateTopic() {
 
 func (s *serverTestSuite) TestRetrieveTopic() {
 	require := s.Require()
-	defer s.store.Reset()
 
 	// Should not be able to retrieve a topic when not authenticated
 	request := &api.Topic{Id: ulids.New().Bytes()}
@@ -257,7 +254,6 @@ func (s *serverTestSuite) TestRetrieveTopic() {
 func (s *serverTestSuite) TestDeleteTopic() {
 	// Test common functionality for delete topic operations
 	require := s.Require()
-	defer s.store.Reset()
 
 	for _, operation := range []api.TopicMod_Operation{api.TopicMod_ARCHIVE, api.TopicMod_DESTROY} {
 		s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
@@ -400,7 +396,6 @@ func (s *serverTestSuite) TestDeleteTopicState() {
 
 func (s *serverTestSuite) TestDeleteTopic_NOOP() {
 	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Operation: api.TopicMod_NOOP,
@@ -429,7 +424,6 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 	require := s.Require()
 	err := s.store.UseFixture(store.RetrieveTopic, "testdata/topic.json")
 	require.NoError(err, "could not load topic fixture")
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Id:        "01GTSMQ3V8ASAPNCFEN378T8RD",
@@ -483,7 +477,6 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 	require := s.Require()
 	err := s.store.UseFixture(store.RetrieveTopic, "testdata/topic.json")
 	require.NoError(err, "could not load topic fixture")
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Id:        "01GTSMQ3V8ASAPNCFEN378T8RD",

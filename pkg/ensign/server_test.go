@@ -120,6 +120,10 @@ func (s *serverTestSuite) TearDownSuite() {
 	logger.ResetLogger()
 }
 
+func (s *serverTestSuite) AfterTest(_, _ string) {
+	s.store.Reset()
+}
+
 // Check an error response from the gRPC Ensign client, ensuring that it is a) a status
 // error, b) has the code specified, and c) (if supplied) that the message matches.
 func (s *serverTestSuite) GRPCErrorIs(err error, code codes.Code, msg string) {

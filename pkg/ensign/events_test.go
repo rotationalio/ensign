@@ -34,7 +34,6 @@ func (s *serverTestSuite) TestPublishEvents() {
 	require := s.Require()
 	stream := s.setupValidPublisher()
 	s.store.UseError(store.Insert, nil)
-	defer s.store.Reset()
 
 	events := make([]*api.EventWrapper, 0, 10)
 	for i := 0; i < 10; i++ {
@@ -73,7 +72,6 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	stream := &mock.PublisherServer{}
 	s.store.OnAllowedTopics = MockAllowedTopics
 	s.store.OnTopicName = MockTopicName
-	defer s.store.Reset()
 
 	// Must be authenticated and have the publisher permission.
 	err := s.srv.Publish(stream)
@@ -169,7 +167,6 @@ func (s *serverTestSuite) TestSecondOpenStreamFail() {
 	// the stream handlers instead. It also prevents concurrency issues with send and
 	// recv on a stream and the possibility of EOF errors and intermittent failures.
 	stream := s.setupValidPublisher()
-	defer s.store.Reset()
 
 	// An OpenStream message must be the first message received by the handler
 	stream.OnRecv = func() (*api.PublisherRequest, error) {
@@ -196,7 +193,6 @@ func (s *serverTestSuite) TestBadPublisherRequest() {
 	// the stream handlers instead. It also prevents concurrency issues with send and
 	// recv on a stream and the possibility of EOF errors and intermittent failures.
 	stream := s.setupValidPublisher()
-	defer s.store.Reset()
 
 	// An OpenStream message must be the first message received by the handler
 	msg := 0
@@ -227,7 +223,6 @@ func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
 	// the stream handlers instead. It also prevents concurrency issues with send and
 	// recv on a stream and the possibility of EOF errors and intermittent failures.
 	stream := s.setupValidPublisher()
-	defer s.store.Reset()
 
 	// Should receive an error when one of the topics is not in allowed topics
 	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: []string{"foo", "bar"}})
@@ -266,7 +261,6 @@ func (s *serverTestSuite) TestPublisherNackEvents() {
 	// the stream handlers instead. It also prevents concurrency issues with send and
 	// recv on a stream and the possibility of EOF errors and intermittent failures.
 	stream := s.setupValidPublisher()
-	defer s.store.Reset()
 
 	// Should receive a nack when an event is published without a topic ID
 	event := &api.EventWrapper{LocalId: []byte("abc")}
