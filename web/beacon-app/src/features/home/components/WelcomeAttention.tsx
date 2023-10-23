@@ -21,7 +21,7 @@ const WelcomeAttention = () => {
     <>
       <div
         className="px-auto  mt-4 flex flex-col justify-between gap-4 space-x-10 rounded-md border border-black/30 bg-[#F7F9FB]  p-4 text-justify xl:flex-row"
-        data-cy="projWelcome"
+        data-cy="ensign-welcome"
       >
         <div className="flex flex-col space-y-10 sm:w-4/5">
           <p className="text-md">
@@ -36,8 +36,8 @@ const WelcomeAttention = () => {
           </p>
         </div>
 
-        <div className="flex">
-          <button onClick={videoModalHandler}>
+        <div className="flex" data-cy="welcome-video">
+          <button onClick={videoModalHandler} data-cy="welcome-video-btn">
             <Image
               src={welcomevideo.preview_image}
               alt="welcome video"

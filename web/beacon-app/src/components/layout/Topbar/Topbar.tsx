@@ -67,6 +67,7 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
                   trigger={<ProfileAvatar name={profileData?.name} />}
                   onOpenChange={onOpenChange}
                   isOpen={isOpen}
+                  data-cy="menu-dropdown"
                 />
               </div>
             </>
