@@ -108,6 +108,38 @@ func (s *Store) Retrieve(topicId ulid.ULID, eventID rlid.RLID) (event *api.Event
 	return event, nil
 }
 
+// Destroy all events, meta-events, and index hashes of the specified topic.
+// NOTE: this will destroy anything in the database that is prefixed with the topicID.
+func (s *Store) Destroy(topicID ulid.ULID) (err error) {
+	if s.readonly {
+		return errors.ErrReadOnly
+	}
+
+	if ulids.IsZero(topicID) {
+		return errors.ErrKeyNull
+	}
+
+	// Iterate over all objects prefixed by the topicID.
+	prefix := util.BytesPrefix(topicID.Bytes())
+	iter := s.db.NewIterator(prefix, &opt.ReadOptions{DontFillCache: true})
+	defer iter.Release()
+
+	batch := &leveldb.Batch{}
+	for iter.Next() {
+		batch.Delete(iter.Key())
+	}
+
+	if err = iter.Error(); err != nil {
+		return err
+	}
+
+	if err = s.db.Write(batch, &opt.WriteOptions{Sync: false, NoWriteMerge: true}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Count the number of objects that match the specified range by iterating through all
 // of the keys and counting them. This is primarily used for testing.
 func (s *Store) Count(slice *util.Range) (count uint64, err error) {

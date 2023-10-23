@@ -6,6 +6,7 @@
   "name": "testing.testapp.test",
   "readonly": false,
   "offset": 83123,
+  "status": "READY",
   "shards": 1,
   "placements": [],
   "types": [],

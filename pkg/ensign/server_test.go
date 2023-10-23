@@ -44,6 +44,10 @@ func (s *serverTestSuite) SetupSuite() {
 	var err error
 	assert := s.Assert()
 
+	// Discard logging from the application to focus on test logs
+	// NOTE: ConsoleLog must be false otherwise this will be overridden
+	logger.Discard()
+
 	// Create a temporary data directory
 	s.dataDir, err = os.MkdirTemp("", "ensign-data-*")
 	assert.NoError(err)
@@ -99,10 +103,6 @@ func (s *serverTestSuite) SetupSuite() {
 
 	// Run the broker for handling events
 	s.srv.RunBroker()
-
-	// Discard logging from the application to focus on test logs
-	// NOTE: ConsoleLog must be false otherwise this will be overridden
-	logger.Discard()
 }
 
 func (s *serverTestSuite) TearDownSuite() {
@@ -118,6 +118,10 @@ func (s *serverTestSuite) TearDownSuite() {
 
 	assert.NoError(os.RemoveAll(s.dataDir), "could not clean up temporary data directory")
 	logger.ResetLogger()
+}
+
+func (s *serverTestSuite) AfterTest(_, _ string) {
+	s.store.Reset()
 }
 
 // Check an error response from the gRPC Ensign client, ensuring that it is a) a status

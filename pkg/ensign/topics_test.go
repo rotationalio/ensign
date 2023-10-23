@@ -16,13 +16,13 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *serverTestSuite) TestListTopics() {
 	require := s.Require()
 	s.store.UseError(store.ListTopics, errors.ErrIterReleased)
-	defer s.store.Reset()
 
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -84,7 +84,6 @@ func (s *serverTestSuite) TestListTopics() {
 func (s *serverTestSuite) TestCreateTopic() {
 	require := s.Require()
 	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
-	defer s.store.Reset()
 
 	topic := &api.Topic{
 		ProjectId: ulids.MustBytes("01GQ7P8DNR9MR64RJR9D64FFNT"),
@@ -161,6 +160,7 @@ func (s *serverTestSuite) TestCreateTopic() {
 		require.False(ulids.IsZero(ulids.MustParse(out.Id)))
 		require.Equal(ulids.MustParse(claims.ProjectID).Bytes(), out.ProjectId)
 		require.Equal(topic.Name, out.Name)
+		require.Equal(api.TopicState_READY, out.Status)
 		require.NotEmpty(out.Created)
 		require.NotEmpty(out.Modified)
 	}
@@ -189,7 +189,6 @@ func (s *serverTestSuite) TestCreateTopic() {
 
 func (s *serverTestSuite) TestRetrieveTopic() {
 	require := s.Require()
-	defer s.store.Reset()
 
 	// Should not be able to retrieve a topic when not authenticated
 	request := &api.Topic{Id: ulids.New().Bytes()}
@@ -255,7 +254,6 @@ func (s *serverTestSuite) TestRetrieveTopic() {
 func (s *serverTestSuite) TestDeleteTopic() {
 	// Test common functionality for delete topic operations
 	require := s.Require()
-	defer s.store.Reset()
 
 	for _, operation := range []api.TopicMod_Operation{api.TopicMod_ARCHIVE, api.TopicMod_DESTROY} {
 		s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
@@ -300,7 +298,7 @@ func (s *serverTestSuite) TestDeleteTopic() {
 		s.GRPCErrorIs(err, codes.NotFound, "topic not found")
 
 		// Unhandled database exceptions should return an internal error
-		s.store.UseError(store.RetrieveTopic, fmt.Errorf("somehing very bad happened"))
+		s.store.UseError(store.RetrieveTopic, fmt.Errorf("something very bad happened"))
 		_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 		s.GRPCErrorIs(err, codes.Internal, "could not process delete topic request")
 
@@ -336,9 +334,68 @@ func (s *serverTestSuite) TestDeleteTopic() {
 	}
 }
 
+func (s *serverTestSuite) TestDeleteTopicState() {
+	require := s.Require()
+
+	testCases := []struct {
+		state     api.TopicState
+		operation api.TopicMod_Operation
+		err       error
+	}{
+		{api.TopicState_READY, api.TopicMod_ARCHIVE, nil},
+		{api.TopicState_READY, api.TopicMod_DESTROY, nil},
+		{api.TopicState_READONLY, api.TopicMod_ARCHIVE, nil},
+		{api.TopicState_READONLY, api.TopicMod_DESTROY, nil},
+		{api.TopicState_UNDEFINED, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_UNDEFINED, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_DELETING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_DELETING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_PENDING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_PENDING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_ALLOCATING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_ALLOCATING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_REPAIRING, api.TopicMod_ARCHIVE, status.Error(codes.FailedPrecondition, "--")},
+		{api.TopicState_REPAIRING, api.TopicMod_DESTROY, status.Error(codes.FailedPrecondition, "--")},
+	}
+
+	ctx := context.Background()
+	topicID := ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD")
+
+	// Authorize access
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		ProjectID:   "01GTSMMC152Q95RD4TNYDFJGHT",
+		Permissions: []string{"topics:edit", "topics:destroy"},
+	}
+
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	s.store.UseError(store.UpdateTopic, nil)
+
+	for i, tc := range testCases {
+		s.store.OnRetrieveTopic = func(topicID ulid.ULID) (*api.Topic, error) {
+			return &api.Topic{
+				Id:        topicID[:],
+				ProjectId: ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT").Bytes(),
+				Status:    tc.state,
+			}, nil
+		}
+
+		_, err := s.client.DeleteTopic(ctx, &api.TopicMod{Id: topicID.String(), Operation: tc.operation}, mock.PerRPCToken(token))
+		if tc.err != nil {
+			require.Error(err, "expected an error on test case %d", i)
+			require.Equal(status.Code(tc.err), status.Code(err), "expected failed precondition on test case %d")
+		} else {
+			require.NoError(err, "expected no error on test case %d", i)
+		}
+	}
+}
+
 func (s *serverTestSuite) TestDeleteTopic_NOOP() {
 	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Operation: api.TopicMod_NOOP,
@@ -367,7 +424,6 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 	require := s.Require()
 	err := s.store.UseFixture(store.RetrieveTopic, "testdata/topic.json")
 	require.NoError(err, "could not load topic fixture")
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Id:        "01GTSMQ3V8ASAPNCFEN378T8RD",
@@ -421,7 +477,6 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 	require := s.Require()
 	err := s.store.UseFixture(store.RetrieveTopic, "testdata/topic.json")
 	require.NoError(err, "could not load topic fixture")
-	defer s.store.Reset()
 
 	request := &api.TopicMod{
 		Id:        "01GTSMQ3V8ASAPNCFEN378T8RD",
@@ -457,6 +512,8 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 		}
 		return nil
 	}
+	s.store.OnDestroy = func(ulid.ULID) error { return nil }
+	s.store.OnUpdateTopic = func(*api.Topic) error { return nil }
 
 	claims.Permissions = []string{permissions.DestroyTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
@@ -464,8 +521,10 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 
 	out, err := s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 	require.NoError(err, "could not execute happy path request")
-	require.Equal(1, s.store.Calls(store.DeleteTopic))
-	require.Zero(s.store.Calls(store.UpdateTopic))
+	require.Equal(1, s.store.Calls(store.UpdateTopic))
+	// TODO: test that destroy and delete topic are queued in the tasks.
+	// require.Equal(1, s.store.Calls(store.Destroy))
+	// require.Equal(1, s.store.Calls(store.DeleteTopic))
 	require.Equal(out.State, api.TopicState_DELETING)
 	require.Equal("01GTSMQ3V8ASAPNCFEN378T8RD", out.Id)
 }

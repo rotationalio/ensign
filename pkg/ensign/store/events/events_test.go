@@ -239,3 +239,55 @@ func (s *readonlyEventsTestSuite) TestRetrieve() {
 	_, err = s.store.Retrieve(ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ"), rlid.RLID{})
 	require.ErrorIs(err, errors.ErrInvalidKey)
 }
+
+func (s *eventsTestSuite) TestDestroy() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load fixtures")
+	defer s.ResetDatabase()
+
+	// Database should be empty to begin
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0xee), count, "expected no objects in the database")
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	err = s.store.Destroy(topicID)
+	require.NoError(err, "unable to destroy topic")
+
+	// Check to make sure all objects were destroyed
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0xc2), count, "expected an event inserted into the database")
+
+	// There should be no events in the database
+	nEvents := 0
+	events := s.store.List(topicID)
+	defer events.Release()
+	for events.Next() {
+		nEvents++
+	}
+	require.NoError(events.Error(), "could not iterate over events")
+	require.Zero(nEvents, "expected no events in the database")
+
+	// There should be no index hashes in the database
+	nIndash := 0
+	hashes := s.store.LoadIndash(topicID)
+	defer hashes.Release()
+	for hashes.Next() {
+		nIndash++
+	}
+	require.NoError(hashes.Error(), "could not iterate over hashes")
+	require.Zero(nIndash, "expected no index hashes in the database")
+}
+
+func (s *readonlyEventsTestSuite) TestDestroy() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	err := s.store.Destroy(topicID)
+	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on destroy topic")
+}

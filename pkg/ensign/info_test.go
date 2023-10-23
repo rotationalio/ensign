@@ -20,8 +20,6 @@ import (
 
 func (s *serverTestSuite) TestInfo() {
 	require := s.Require()
-	defer s.store.Reset()
-
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
@@ -128,8 +126,6 @@ func (s *serverTestSuite) TestInfo() {
 func (s *serverTestSuite) TestInfoSingleTopic() {
 	// Should be able to get info for a single topic in a project
 	// This test ensures that a Beacon requirement is fulfilled
-	defer s.store.Reset()
-
 	require := s.Require()
 	ctx := context.Background()
 
