@@ -603,7 +603,7 @@ func TestDuplicateReferencing(t *testing.T) {
 			PublisherId: "01HD1M0AVDVHPA4WA73MAA7NH7",
 			Ipaddr:      "192.148.21.133",
 			ClientId:    "data-ingestor-bravo",
-			UserAgent:   "Go-Ensign v0.11.0",
+			UserAgent:   "Go-Ensign v0.12.0",
 		}
 	}
 
