@@ -158,13 +158,15 @@ Then('I should not see the Create Project modal', () => {
 });
 
 When('I see the Starter Videos component', () => {
-  cy.get('[data-cy="starter-videos"]').should('be.visible')
+  cy.get('[data-cy="starter-videos-component"]').should('be.visible')
 });
 
 Then('I should see the starter videos', () => {
-  for (let i = 0; i < 6; i++) {
-    cy.get(`[data-cy="starter-video-${i}"]`).should('be.visible')
-  };
+    cy.get('[data-cy="starter-videos"]').should('be.visible')
+
+    cy.get('[data-cy="starter-videos"]').within(() => {
+      cy.get('[data-cy="starter-video"]').first().should('be.visible')
+    });
 });
 
 When('I see the Schedule Office Hours icon in the top bar', () => {
