@@ -23,6 +23,7 @@ export const APP_ROUTE = {
   PROFILE: '/profile',
   VERIFY_TOKEN: '/verify',
   RESEND_EMAIL: '/resend',
+  STATUS: '/status',
 };
 
 // quaterdeck api routes

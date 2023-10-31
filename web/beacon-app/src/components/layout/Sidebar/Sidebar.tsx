@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
 import invariant from 'invariant';
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { appConfig } from '@/application/config';
@@ -12,11 +13,14 @@ import { OrganizationMenuDropdown } from '@/components/MenuDropdown/Organization
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
+import useFetchStatus from '@/features/home/hooks/useFetchStatus';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
+
+import UpdateAlert from './InfoAlert';
 
 type SidebarProps = {
   className?: string;
@@ -25,6 +29,8 @@ type SidebarProps = {
 function SideBar({ className }: SidebarProps) {
   const { profile: userInfo } = useFetchProfile();
   const { version: appVersion, revision: gitRevision } = appConfig;
+  // Store the app version in local storage.
+  localStorage.setItem('appVersion', appVersion);
 
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -37,6 +43,7 @@ function SideBar({ className }: SidebarProps) {
     organizationsList: organizations?.organizations,
     currentOrg: appState?.orgID,
   });
+  const { status } = useFetchStatus();
 
   const onOpenChange = () => {
     setIsOpen(!isOpen);
@@ -71,6 +78,35 @@ function SideBar({ className }: SidebarProps) {
   useEffect(() => {
     invariant(appState?.orgID, 'orgID is not defined');
   }, [appState?.orgID]);
+
+  // Get the version number from the status response without the release level and number.
+  const statusVersion = status?.version.match(/^v?(\d+\.\d+\.\d+)/);
+
+  useEffect(() => {
+    const storedAppVersion = localStorage.getItem('appVersion');
+
+    if (storedAppVersion && storedAppVersion !== statusVersion?.[1]) {
+      const updateAlertToast = toast.error(
+        <div className="flex items-center">
+          <UpdateAlert />
+        </div>,
+        {
+          // Display toast until the user clicks the update button.
+          duration: 999999999,
+          position: 'bottom-right',
+          icon: '🔔',
+          style: {
+            background: '#EBF5FF',
+            color: '#1E429F',
+          },
+        }
+      );
+
+      return () => {
+        toast.dismiss(updateAlertToast);
+      };
+    }
+  }, [statusVersion]);
 
   return (
     <>
