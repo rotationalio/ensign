@@ -28,7 +28,7 @@ type SidebarProps = {
 
 function SideBar({ className }: SidebarProps) {
   const { profile: userInfo } = useFetchProfile();
-  const { version: appVersion, revision: gitRevision } = appConfig;
+  const { version: appVersion, revision: gitRevision, nodeENV: env } = appConfig;
 
   // Store the app version in local storage.
   const storedAppVersion = appVersion.match(/^v?(\d+\.\d+\.\d+)/);
@@ -87,28 +87,30 @@ function SideBar({ className }: SidebarProps) {
   useEffect(() => {
     const storedAppVersion = localStorage.getItem('appVersion');
 
-    if (storedAppVersion && storedAppVersion !== statusVersion?.[0]) {
-      const updateAlertToast = toast.error(
-        <div className="flex items-center">
-          <UpdateAlert />
-        </div>,
-        {
-          // Display toast until the user clicks the update button.
-          duration: 999999999,
-          position: 'bottom-right',
-          icon: '🔔',
-          style: {
-            background: '#EBF5FF',
-            color: '#1E429F',
-          },
-        }
-      );
+    if (env !== 'development') {
+      if (storedAppVersion && storedAppVersion !== statusVersion?.[0]) {
+        const updateAlertToast = toast.error(
+          <div className="flex items-center">
+            <UpdateAlert />
+          </div>,
+          {
+            // Display toast until the user clicks the update button.
+            duration: 999999999,
+            position: 'bottom-right',
+            icon: '🔔',
+            style: {
+              background: '#EBF5FF',
+              color: '#1E429F',
+            },
+          }
+        );
 
-      return () => {
-        toast.dismiss(updateAlertToast);
-      };
+        return () => {
+          toast.dismiss(updateAlertToast);
+        };
+      }
     }
-  }, [statusVersion]);
+  }, [statusVersion, env]);
 
   return (
     <>
