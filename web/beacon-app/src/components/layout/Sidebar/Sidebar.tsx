@@ -31,7 +31,7 @@ function SideBar({ className }: SidebarProps) {
   const { version: appVersion, revision: gitRevision, nodeENV: env } = appConfig;
 
   // Store the app version in local storage.
-  const storedAppVersion = appVersion.match(/^v?(\d+\.\d+\.\d+)/);
+  const storedAppVersion = appVersion.match(/(\d+\.\d+\.\d+)/);
   localStorage.setItem('appVersion', storedAppVersion?.[0] || '');
 
   const navigate = useNavigate();
