@@ -11,7 +11,11 @@ function UpdateAlert() {
         </Trans>
       </p>
       <div>
-        <Button size="small" onClick={() => window.location.reload()}>
+        <Button
+          size="small"
+          onClick={() => window.location.reload()}
+          data-testid="update-alert-btn"
+        >
           <Trans>Update</Trans>
         </Button>
       </div>

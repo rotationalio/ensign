@@ -1,0 +1,13 @@
+// Vitest Snapshot v1
+
+exports[`UpdateAlert > should render if the version number returned from the useFetchStatus hook is different from the version number from the appConfig 1`] = `
+<div>
+  <p />
+  <div>
+    <button
+      class="sc-bcXHqe llTXds line-height-1.75 cursor-pointer text-white font-size-14 px-4 py-2 min-h-[28px] bg-inherit transition-colors duration-200 ease-in-out rounded-5 focus:outline-none text-[14px] font-bold"
+      data-testid="update-alert-btn"
+    />
+  </div>
+</div>
+`;

@@ -20,7 +20,7 @@ import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 
-import UpdateAlert from './InfoAlert';
+import UpdateAlert from './UpdateAlert';
 
 type SidebarProps = {
   className?: string;
@@ -29,8 +29,10 @@ type SidebarProps = {
 function SideBar({ className }: SidebarProps) {
   const { profile: userInfo } = useFetchProfile();
   const { version: appVersion, revision: gitRevision } = appConfig;
+
   // Store the app version in local storage.
-  localStorage.setItem('appVersion', appVersion);
+  const storedAppVersion = appVersion.match(/^v?(\d+\.\d+\.\d+)/);
+  localStorage.setItem('appVersion', storedAppVersion?.[0] || '');
 
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -85,7 +87,7 @@ function SideBar({ className }: SidebarProps) {
   useEffect(() => {
     const storedAppVersion = localStorage.getItem('appVersion');
 
-    if (storedAppVersion && storedAppVersion !== statusVersion?.[1]) {
+    if (storedAppVersion && storedAppVersion !== statusVersion?.[0]) {
       const updateAlertToast = toast.error(
         <div className="flex items-center">
           <UpdateAlert />
