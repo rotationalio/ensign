@@ -8,7 +8,7 @@ const MainLayout = () => {
   return (
     <>
       <LandingHeader />
-      <Container className="place-items-center">
+      <Container id="landing-content" className="place-items-center">
         <Outlet />
       </Container>
       <LandingFooter />
