@@ -9,10 +9,10 @@ import TwitterIcon from '@/assets/icons/twitterIcon';
 function LandingFooter() {
   const { version: appVersion, revision: gitRevision } = appConfig;
   return (
-    <footer className="bg-footer bg-cover bg-no-repeat text-white ">
-      <div className="pt-72 2xl:pt-80">
+    <footer className="mt-20 bg-footer bg-cover bg-no-repeat text-white sm:mt-0 ">
+      <div className="pt-[300px] sm:pt-64 lg:pt-[225px] 2xl:pt-[320px]">
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto grid-cols-3 text-center sm:ml-0 sm:grid sm:text-left">
+          <div className="mx-auto grid text-center md:grid-cols-3">
             <div className="pt-4 font-bold leading-loose">
               <h3 className="font-light">PRODUCT</h3>
               <ul>

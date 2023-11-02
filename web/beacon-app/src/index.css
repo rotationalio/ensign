@@ -153,6 +153,10 @@
   }
 }
 
+#landing-content {
+  min-height: calc(100vh - 600px);
+}
+
 .RightSlot {
   margin-left: auto;
   padding-left: 20px;
