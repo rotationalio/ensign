@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/macro';
 
 import { Tag } from '@/components/ui/Tag';
-import { TOPIC_STATE } from '@/constants/rolesAndStatus';
+import { PROJECT_STATE } from '@/constants/rolesAndStatus';
 
 interface TopicStateTagProps {
   status: string;
@@ -10,11 +10,9 @@ interface TopicStateTagProps {
 
 // TODO: list all possible values of status
 const StateMap = {
-  [TOPIC_STATE.ACTIVE]: 'success',
-  [TOPIC_STATE.PENDING]: 'secondary',
-  [TOPIC_STATE.ARCHIVED]: 'warning',
-  [TOPIC_STATE.DELETTING]: 'error',
-  [TOPIC_STATE.INCOMPLETE]: 'error',
+  [PROJECT_STATE.ACTIVE]: 'success',
+  [PROJECT_STATE.ARCHIVED]: 'error',
+  [PROJECT_STATE.INCOMPLETE]: 'warning',
 } as const;
 
 const TagState = ({ status }: TopicStateTagProps) => {

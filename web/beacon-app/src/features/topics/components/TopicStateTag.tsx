@@ -9,9 +9,8 @@ interface TopicStateTagProps {
 
 const topicStateMap = {
   [TOPIC_STATE.ACTIVE]: 'success',
-  [TOPIC_STATE.PENDING]: 'secondary',
   [TOPIC_STATE.ARCHIVED]: 'warning',
-  [TOPIC_STATE.DELETTING]: 'error',
+  [TOPIC_STATE.DELETING]: 'error',
 } as const;
 
 const TopicStateTag = ({ status }: TopicStateTagProps) => {
