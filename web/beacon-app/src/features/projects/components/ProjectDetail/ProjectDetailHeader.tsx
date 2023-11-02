@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import React from 'react';
 
@@ -13,10 +14,9 @@ const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({ data }) => {
   };
 
   return (
-    <Heading as="h1" className="flex items-center gap-5 text-2xl font-semibold">
-      <span className="mr-2" data-cy="project-name">
-        {getNormalizedProjectName()}
-      </span>
+    <Heading as="h1" className="flex items-center gap-3 text-2xl font-semibold">
+      <Trans>Project:</Trans>
+      <span data-cy="project-name">{getNormalizedProjectName()}</span>
       <TagState status={status as string} />
     </Heading>
   );
