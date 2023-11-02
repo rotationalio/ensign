@@ -105,31 +105,27 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       }
     >
       <div className="mt-[46px]  border-y-neutral-600" data-cy="keyComp">
-        <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
-          <Trans>Permission Your Data Flows: Generate API Keys</Trans>
-        </Heading>
-        <div className="flex space-x-1">
-          <p className="my-4">
-            <Trans>
-              Now that you have at least one topic or event stream set up, generate API keys to set
-              permissions and securely provision data access. API keys connect your publishers (data
-              sources) to Ensign and control access by subscribers. Generate at least one API key
-              for your project. You can customize permissions.
-            </Trans>
-            <span className="ml-2" data-cy="keyHint">
-              <HelpTooltip data-cy="keyInfo">
-                <p>
-                  <Trans>
-                    Each key consists of two parts - a ClientID and a ClientSecret. You'll need both
-                    to establish a client connection, create Ensign topics, publishers, and
-                    subscribers. Keep your API keys private -- if you misplace your keys, you can
-                    revoke them and generate new ones.
-                  </Trans>
-                </p>
-              </HelpTooltip>
-            </span>
-          </p>
+        <div className="flex items-center">
+          <Heading as={'h1'} className="text-lg font-semibold">
+            <Trans>API Keys</Trans>
+          </Heading>
+          <span className="ml-2" data-cy="keyHint">
+            <HelpTooltip data-cy="keyInfo">
+              <p>
+                <Trans>
+                  API keys connect publishers (your data sources) to Ensign and control access by
+                  subscribers. Generate at least one API key for your project. You can customize
+                  permissions. Each key consists of two parts - a ClientID and a ClientSecret.
+                  You'll need both to establish a client connection. Keep your API keys private. If
+                  you misplace your keys, you can revoke them and generate new ones.
+                </Trans>
+              </p>
+            </HelpTooltip>
+          </span>
         </div>
+        <p className="my-4">
+          <Trans>Generate API keys to set permissions and securely provision data access.</Trans>
+        </p>
         <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
           <div className="flex items-center gap-3"></div>
           <div>

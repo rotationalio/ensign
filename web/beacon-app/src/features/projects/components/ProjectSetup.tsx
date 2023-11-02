@@ -21,7 +21,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
         data-testid="project-setup"
       >
         <Card.Header>
-          <Heading as="h3" className="pb-2 text-warning-500">
+          <Heading as="h3" className="pb-2 font-bold">
             <Trans>Project setup is incomplete. {warningMessage}</Trans>
           </Heading>
         </Card.Header>
@@ -32,7 +32,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>1.</td>
                 <td>
-                  <Trans>Create Your Project</Trans>
+                  <Trans>Name Your Project</Trans>
                 </td>
                 <td data-testid="project-created">
                   {isProjectCreated ? <HeavyCheckMark width={16} height={16} /> : null}
@@ -41,7 +41,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>2.</td>
                 <td>
-                  <Trans>Design Your Data Flows</Trans>
+                  <Trans>Create Your Topics</Trans>
                 </td>
                 <td data-testid="topic-created">
                   {isTopicCreated ? <HeavyCheckMark width={16} height={16} /> : null}
@@ -50,7 +50,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>3.</td>
                 <td>
-                  <Trans>Permission Your Data Flows</Trans>
+                  <Trans>Generate API Keys</Trans>
                 </td>
                 <td data-testid="api-key-created">
                   {isAPIKeyCreated ? <HeavyCheckMark width={16} height={16} /> : null}
