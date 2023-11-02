@@ -30,7 +30,7 @@ const Tag: React.FC<TagProps> = ({
       case 'warning':
         return 'bg-warning-600 text-white';
       case 'error':
-        return 'bg-danger-600 text-white';
+        return 'bg-danger-700 text-white';
       case 'ghost':
         return 'bg-transparent text-black';
 

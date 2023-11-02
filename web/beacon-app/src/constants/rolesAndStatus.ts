@@ -45,4 +45,5 @@ export const TOPIC_STATE = {
   PENDING: 'Pending',
   ARCHIVED: 'Archived',
   DELETTING: 'Deleting',
+  INCOMPLETE: 'Incomplete',
 };

@@ -14,6 +14,7 @@ const StateMap = {
   [TOPIC_STATE.PENDING]: 'secondary',
   [TOPIC_STATE.ARCHIVED]: 'warning',
   [TOPIC_STATE.DELETTING]: 'error',
+  [TOPIC_STATE.INCOMPLETE]: 'error',
 } as const;
 
 const TagState = ({ status }: TopicStateTagProps) => {

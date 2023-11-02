@@ -26,7 +26,9 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
           <div className="flex items-center justify-between">
             <div>
               <Trans>
-                Your project is active! Check out our{' '}
+                Your project is active! You now have a{' '}
+                <span className="font-bold">data repository</span> for real-time data feeds. Next,
+                use our{' '}
                 <a
                   href={SDKLink}
                   target="_blank"
@@ -52,7 +54,7 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
                 >
                   example code
                 </a>{' '}
-                to connect publishers and subscribers to your project (database).
+                to connect publishers and subscribers to your project.
               </Trans>
             </div>
             <Button
