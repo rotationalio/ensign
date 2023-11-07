@@ -51,27 +51,25 @@ export default function MemberDetails() {
           fallback={<div>We are unable to fetch your member, please try again.</div>}
         >
           <div className="my-10">
-            <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
-              <Heading as="h1" className="flex w-40 items-center gap-5 text-2xl font-semibold">
-                <span className="mr-2">
+            <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-4">
+              <Heading as="h1" className="text-[16px] font-semibold leading-[25px]">
+                <span>
                   <Trans>User Profile</Trans>
                 </span>
               </Heading>
-              <div className="flex w-full justify-end">
-                <SettingsButton
-                  key="org-action"
-                  data={[
-                    {
-                      name: t`Cancel Account`,
-                      onClick: openCancelModal,
-                    },
-                    // {
-                    //   name: t`Change Password`,
-                    //   onClick: () => openChangePasswordModal(),
-                    // },
-                  ]}
-                />
-              </div>
+              <SettingsButton
+                key="org-action"
+                data={[
+                  {
+                    name: t`Cancel Account`,
+                    onClick: openCancelModal,
+                  },
+                  // {
+                  //   name: t`Change Password`,
+                  //   onClick: () => openChangePasswordModal(),
+                  // },
+                ]}
+              />
             </div>
             <div className="mx-6">
               <MemberDetailInfo data={profile} />

@@ -49,7 +49,7 @@ const TopicDetailPage = () => {
       {topic && wasTopicFetched && (
         <>
           {/* <TopicQuickView topicID={topicID} /> */}
-          <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
+          <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-4">
             <Heading as="h1" className="flex items-center gap-3 text-2xl font-semibold">
               <Trans>Topic:</Trans>
               <span className="mr-2" data-cy="topic-name">
