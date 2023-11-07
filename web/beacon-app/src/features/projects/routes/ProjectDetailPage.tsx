@@ -38,7 +38,7 @@ const ProjectDetailPage = () => {
 
   return (
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
-      <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
+      <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-4">
         <ProjectDetailHeader data={project} />
         <ProjectSettings data={project} />
       </div>

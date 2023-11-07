@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Button, Menu, useMenu } from '@rotational/beacon-core';
+import { Menu, useMenu } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import SettingIcon from '@/components/icons/setting';
@@ -41,15 +41,13 @@ const TopicSettings = () => {
   return (
     <>
       <div>
-        <Button
-          variant="ghost"
-          size="custom"
+        <button
           className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
           data-cy="topic-detail-actions"
         >
           <SettingIcon />
-        </Button>
+        </button>
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
           <Menu.Item onClick={openArchiveTopicModal}>
             <Trans>Archive Topic</Trans>

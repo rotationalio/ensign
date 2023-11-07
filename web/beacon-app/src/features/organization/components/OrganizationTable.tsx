@@ -38,8 +38,8 @@ export default function OrganizationsTable() {
             </div>
           }
         >
-          <div className="rounded-lg bg-[#F7F9FB] px-6 py-3">
-            <Heading as={'h1'} className=" text-2xl font-bold">
+          <div className="rounded-md bg-[#F7F9FB] px-6 py-4">
+            <Heading as={'h1'} className="text-[16px] font-semibold leading-[25px]">
               <span className="mr-2">
                 <Trans>Workspaces</Trans>
               </span>
