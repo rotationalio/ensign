@@ -223,3 +223,100 @@ func (s *Server) Index(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "index.html", status)
 }
+
+func (s *Server) Services(c *gin.Context) {
+	// Create a context to render the web page with
+	status := &StatusPageContext{
+		StatusMessage: "Unknown Rotational Systems Status",
+		StatusColor:   CSSSecondary,
+	}
+
+	// Load the service states from the db
+	serviceInfo := &services.Info{}
+	if err := db.Get(db.KeyCurrentStatus, serviceInfo); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			log.Warn().Err(err).Msg("no monitors have been checked yet")
+		} else {
+			log.Error().Err(err).Msg("could not retrieve service info from database")
+		}
+	}
+
+	// Create the services contexts
+	var worstStatus health.Status
+	status.ServiceGroups = make([]ServiceGroupContext, 0, len(serviceInfo.Groups))
+	for _, group := range serviceInfo.Groups {
+		sgroup := ServiceGroupContext{
+			Title:         group.Title,
+			ServiceStates: make([]ServiceStateContext, 0, len(group.Services)),
+		}
+
+		for _, service := range group.Services {
+			// Global Description of Rotational Status
+			if service.Status > worstStatus {
+				worstStatus = service.Status
+				status.StatusColor = ColorFromStatus(service.Status)
+				switch service.Status {
+				case health.Online:
+					status.StatusMessage = "All Rotational Systems Operational"
+				case health.Maintenance:
+					status.StatusMessage = "Ongoing Maintenance: Some Services may be Temporarily Unavailable"
+				case health.Stopping, health.Degraded:
+					status.StatusMessage = "Some Rotational Systems are Experiencing Degraded Performance"
+				case health.Unhealthy:
+					status.StatusMessage = "Partial Outages Detected: Rotational Systems are Unhealthy"
+				case health.Offline, health.Outage:
+					status.StatusMessage = "Major Outages Detected: Rotational Systems are Unavailable"
+				default:
+					status.StatusMessage = "Unknown Rotational Systems Status"
+				}
+			}
+
+			// Create the Service Context
+			sstate := ServiceStateContext{
+				Title:       service.Title,
+				StatusColor: ColorFromStatus(service.Status),
+				StatusIcon:  IconFromStatus(service.Status),
+			}
+			sgroup.ServiceStates = append(sgroup.ServiceStates, sstate)
+		}
+		status.ServiceGroups = append(status.ServiceGroups, sgroup)
+	}
+
+	c.HTML(http.StatusOK, "services.html", status)
+}
+
+func (s *Server) Incidents(c *gin.Context) {
+	// Create a context to render the web page with
+	status := &StatusPageContext{
+		StatusMessage: "Unknown Rotational Systems Status",
+		StatusColor:   CSSSecondary,
+	}
+
+	// Fetch Incidents from the database
+	days, err := incident.LastWeek()
+	if err != nil {
+		log.Error().Err(err).Msg("could not fetch incidents from db")
+	}
+
+	status.IncidentHistory = make([]IncidentDayContext, 0, len(days))
+	for _, day := range days {
+		idc := IncidentDayContext{
+			Date:      day.Date,
+			Incidents: make([]IncidentContext, 0, len(day.Incidents)),
+		}
+
+		for _, incident := range day.Incidents {
+			idc.Incidents = append(idc.Incidents, IncidentContext{
+				Description: incident.Description,
+				StartTime:   incident.StartTime,
+				EndTime:     incident.EndTime,
+				StatusColor: ColorFromStatus(incident.Status),
+				StatusIcon:  IconFromStatus(incident.Status),
+			})
+		}
+
+		status.IncidentHistory = append(status.IncidentHistory, idc)
+	}
+
+	c.HTML(http.StatusOK, "incidents.html", status)
+}

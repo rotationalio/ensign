@@ -30,38 +30,9 @@
   </header>
 
   <main class="container">
-    <div class="row py-5">
-      <div class="col">
-        <div class="alert alert-{{ .StatusColor }} fw-bold bg-{{ .StatusColor }} text-white mb-0" role="alert">
-          {{ .StatusMessage }}
-        </div>
-      </div>
+    <div id="service-statuses" hx-get="/services" hx-trigger="every 5s">
+      {{ template "services" . }}
     </div>
-
-    {{ range $g, $group := .ServiceGroups }}
-    {{ if $group.Title }}
-    <div class="row">
-      <h3 class="h4 pb-1">{{ $group.Title }}</h3>
-    </div>
-    {{ end }}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 pt-0 pb-3">
-      {{ range $i, $service := $group.ServiceStates }}
-      {{ $success := "success" }}
-      <div class="col">
-        <div class="card mb-1 {{- if ne $service.StatusColor $success }} border-{{ $service.StatusColor }}{{ end }}">
-          <div class="card-body">
-            <span class="fw-bold d-inline-block align-middle text-truncate m-0 p-0" style="width: 79%">
-              {{- $service.Title -}}
-            </span>
-            <span class="d-inline-block align-middle text-end m-0 p-0" style="width: 19%">
-              <i class="text-{{ $service.StatusColor }} pe-1 fa-solid fa-{{ $service.StatusIcon }}"></i>
-            </span>
-          </div>
-        </div>
-      </div>
-      {{ end }}
-    </div>
-    {{ end }}
 
     <div class="row">
       <div class="col d-none d-md-block pt-3">
@@ -79,22 +50,8 @@
 
     <div class="row py-4">
       <h2 class="mb-1">Incident History</h2>
-      <div class="incident-history">
-        {{ range $i, $day := .IncidentHistory }}
-        <div class="incident-day mt-4">
-          <h3 class="h5 pb-2 border-bottom">{{ $day.Date.Format "January 02, 2006" }}</h3>
-          {{ range $j, $incident := $day.Incidents }}
-          <div class="incident mt-2">
-            <p class="mb-0 pb-0"><i class="text-{{ $incident.StatusColor }} pe-1 fa-solid fa-{{ $incident.StatusIcon }}"></i> {{ $incident.Description }}</p>
-            <small class="text-muted">{{ $incident.TimeFormat }}</small>
-          </div>
-          {{ else }}
-          <div class="no-incidents mt-3 text-muted">
-            <p>No incidents detected.</p>
-          </div>
-          {{ end }}
-        </div>
-        {{ end }}
+      <div class="incident-history" hx-get="/incidents" hx-trigger="every 10s">
+        {{ template "incidents" . }}
       </div>
     </div>
   </main>
@@ -107,11 +64,6 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
-  <script>
-    // Simple page reloader to load the page every 5 seconds
-    window.setInterval(function() {
-      window.location.reload();
-    }, 5000)
-  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.8" integrity="sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr" crossorigin="anonymous"></script>
 </body>
 </html>
