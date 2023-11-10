@@ -67,4 +67,5 @@ export interface ApiAdapters {
   forgotPassword(email: ForgotPasswordDTO): Promise<any>;
   resetPassword(payload: ResetPasswordDTO): Promise<any>;
   getStatus(): Promise<StatusResponse>;
+  getInviteAuthenticationRequest(token: string): Promise<any>;
 }

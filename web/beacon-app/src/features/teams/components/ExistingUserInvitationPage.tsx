@@ -1,13 +1,16 @@
 import { Heading, Toast } from '@rotational/beacon-core';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
-import { isAuthenticated, useLogin } from '@/features/auth';
+import { useLogin } from '@/features/auth';
 import { LoginForm } from '@/features/auth/components';
-import { InviteAuthUser } from '@/features/auth/types/LoginService';
+import { InviteAuthUser, isAuthenticated } from '@/features/auth/types/LoginService';
 import { useOrgStore } from '@/store';
+import { getCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
+import useFetchInviteAuthentication from '../hooks/useFetchInviteAuthentication';
 import TeamInvitationCard from './TeamInvitationCard';
 
 export default function ExistingUserInvitationPage({ data }: { data: any }) {
@@ -25,7 +28,27 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
     invite_token: invitee_token,
   } as InviteAuthUser;
 
-  console.log('[data ]', initialValues);
+  const { invite, authData, wasInviteAuthenticated } = useFetchInviteAuthentication(
+    invitee_token as string
+  );
+
+  const authenticated = getCookie('isAuthenticated') === 'true';
+
+  useEffect(() => {
+    if (authenticated && invitee_token) {
+      invite(invitee_token);
+    }
+  }, [invitee_token, invite, authenticated]);
+
+  console.log('authenticated', authenticated);
+  console.log('wasInviteAuthenticated', wasInviteAuthenticated);
+
+  if (wasInviteAuthenticated && authData?.access_token) {
+    const token = decodeToken(authData.access_token) as any;
+    Store.setAuthUser(token, !!authData.authenticated);
+
+    navigate(APP_ROUTE.DASHBOARD);
+  }
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
@@ -33,13 +56,9 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
 
     Store.setAuthUser(token, !!login.authenticated);
 
-    // if(!login.auth?.last_login){
-    //   navigate(APP_ROUTE.GETTING_STARTED);
-    // }
-    // else{
     navigate(APP_ROUTE.DASHBOARD);
-    //}
   }
+
   return (
     <div>
       {login.hasAuthFailed && (
@@ -69,7 +88,6 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
           <LoginForm
             onSubmit={login.authenticate}
             initialValues={initialValues}
-            /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
