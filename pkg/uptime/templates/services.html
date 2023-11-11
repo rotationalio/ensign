@@ -1,1 +1,36 @@
 {{ template "services" . }}
+
+{{ define "services" }}
+<div class="row py-5">
+  <div class="col">
+    <div class="alert alert-{{ .StatusColor }} fw-bold bg-{{ .StatusColor }} text-white mb-0" role="alert">
+      {{ .StatusMessage }}
+    </div>
+  </div>
+</div>
+
+{{ range $g, $group := .ServiceGroups }}
+{{ if $group.Title }}
+<div class="row">
+  <h3 class="h4 pb-1">{{ $group.Title }}</h3>
+</div>
+{{ end }}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 pt-0 pb-3">
+  {{ range $i, $service := $group.ServiceStates }}
+  {{ $success := "success" }}
+  <div class="col">
+    <div class="card mb-1 {{- if ne $service.StatusColor $success }} border-{{ $service.StatusColor }}{{ end }}">
+      <div class="card-body">
+        <span class="fw-bold d-inline-block align-middle text-truncate m-0 p-0" style="width: 79%">
+          {{- $service.Title -}}
+        </span>
+        <span class="d-inline-block align-middle text-end m-0 p-0" style="width: 19%">
+          <i class="text-{{ $service.StatusColor }} pe-1 fa-solid fa-{{ $service.StatusIcon }}"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+</div>
+{{ end }}
+{{ end }}

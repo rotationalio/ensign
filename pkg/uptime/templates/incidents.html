@@ -1,1 +1,19 @@
 {{ template "incidents" . }}
+
+{{ define "incidents" }}
+{{ range $i, $day := .IncidentHistory }}
+<div class="incident-day mt-4">
+  <h3 class="h5 pb-2 border-bottom">{{ $day.Date.Format "January 02, 2006" }}</h3>
+  {{ range $j, $incident := $day.Incidents }}
+  <div class="incident mt-2">
+    <p class="mb-0 pb-0"><i class="text-{{ $incident.StatusColor }} pe-1 fa-solid fa-{{ $incident.StatusIcon }}"></i> {{ $incident.Description }}</p>
+    <small class="text-muted">{{ $incident.TimeFormat }}</small>
+  </div>
+  {{ else }}
+  <div class="no-incidents mt-3 text-muted">
+    <p>No incidents detected.</p>
+  </div>
+  {{ end }}
+</div>
+{{ end }}
+{{ end }}
