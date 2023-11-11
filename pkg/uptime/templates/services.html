@@ -5,6 +5,9 @@
   <div class="col">
     <div class="alert alert-{{ .StatusColor }} fw-bold bg-{{ .StatusColor }} text-white mb-0" role="alert">
       {{ .StatusMessage }}
+      <span id="status-indicator" class="float-end htmx-indicator">
+        <i class="fa fa-spinner fa-spin"></i>
+      </span>
     </div>
   </div>
 </div>

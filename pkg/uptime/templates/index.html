@@ -30,7 +30,7 @@
   </header>
 
   <main class="container">
-    <div id="service-statuses" hx-get="/services" hx-trigger="every 5s">
+    <div id="service-statuses" hx-get="/services" hx-trigger="every 5s" hx-indicator="#status-indicator">
       {{ template "services" . }}
     </div>
 
@@ -49,8 +49,13 @@
     </div>
 
     <div class="row py-4">
-      <h2 class="mb-1">Incident History</h2>
-      <div class="incident-history" hx-get="/incidents" hx-trigger="every 10s">
+      <h2 class="mb-1">
+        Incident History
+        <span id="incidents-indicator" class="float-end htmx-indicator">
+          <i class="fa fa-spinner fa-spin"></i>
+        </span>
+      </h2>
+      <div class="incident-history" hx-get="/incidents" hx-trigger="every 10s" hx-indicator="#incidents-indicator">
         {{ template "incidents" . }}
       </div>
     </div>
