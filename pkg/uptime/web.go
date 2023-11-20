@@ -144,6 +144,37 @@ func (s *Server) Index(c *gin.Context) {
 		StatusColor:   CSSSecondary,
 	}
 
+	// Fetch the services status context and incidents history from the database
+	s.servicesContext(status)
+	s.incidentsContext(status)
+	c.HTML(http.StatusOK, "index.html", status)
+}
+
+func (s *Server) Services(c *gin.Context) {
+	// Create a context to render the web page with.
+	status := &StatusPageContext{
+		StatusMessage: "Unknown Rotational Systems Status",
+		StatusColor:   CSSSecondary,
+	}
+
+	// Fetch the services status context from the database.
+	s.servicesContext(status)
+	c.HTML(http.StatusOK, "services.html", status)
+}
+
+func (s *Server) Incidents(c *gin.Context) {
+	// Create a context to render the web page with
+	status := &StatusPageContext{
+		StatusMessage: "Unknown Rotational Systems Status",
+		StatusColor:   CSSSecondary,
+	}
+
+	// Fetch the incidents history from the database
+	s.incidentsContext(status)
+	c.HTML(http.StatusOK, "incidents.html", status)
+}
+
+func (s *Server) servicesContext(status *StatusPageContext) error {
 	// Load the service states from the db
 	serviceInfo := &services.Info{}
 	if err := db.Get(db.KeyCurrentStatus, serviceInfo); err != nil {
@@ -152,6 +183,7 @@ func (s *Server) Index(c *gin.Context) {
 		} else {
 			log.Error().Err(err).Msg("could not retrieve service info from database")
 		}
+		return err
 	}
 
 	// Create the services contexts
@@ -195,10 +227,15 @@ func (s *Server) Index(c *gin.Context) {
 		status.ServiceGroups = append(status.ServiceGroups, sgroup)
 	}
 
+	return nil
+}
+
+func (s *Server) incidentsContext(status *StatusPageContext) error {
 	// Fetch Incidents from the database
 	days, err := incident.LastWeek()
 	if err != nil {
 		log.Error().Err(err).Msg("could not fetch incidents from db")
+		return err
 	}
 
 	status.IncidentHistory = make([]IncidentDayContext, 0, len(days))
@@ -221,5 +258,5 @@ func (s *Server) Index(c *gin.Context) {
 		status.IncidentHistory = append(status.IncidentHistory, idc)
 	}
 
-	c.HTML(http.StatusOK, "index.html", status)
+	return nil
 }
