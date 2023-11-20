@@ -16,18 +16,6 @@ Then once the images are built run the docker containers:
 $ ./containers/local.sh -p backend up
 ```
 
-You can then run publishers and subscribers using the `debug` command to generate 30 events per second:
-
-```
-$ go run ./cmd/debug generate
-```
-
-And to create a subscriber to consume the events:
-
-```
-$ go run ./cmd/debug consume
-```
-
 ## Documentation
 
 The primary [Ensign documentation](https://ensign.rotational.dev/) is published in this repo in the `docs/` directory as a [Hugo](https://gohugo.io/) site using the [hugo-book theme](https://github.com/alex-shpak/hugo-book).
@@ -68,7 +56,7 @@ To create a new documentation page:
 $ hugo new path/to/page.md
 ```
 
-This will create a new page with the documentation default template; open in a browser and edit in markdown; your changes should reload live in the browser! Our theme has many options and shortcodes; to see how these work, please viist the theme documentation. A couple of important quick links are below:
+This will create a new page with the documentation default template; open in a browser and edit in markdown; your changes should reload live in the browser! Our theme has many options and shortcodes; to see how these work, please visit the theme documentation. A couple of important quick links are below:
 
 - [Page Configuration](https://github.com/alex-shpak/hugo-book#page-configuration)
 - [Hints and Notification Blocks](https://hugo-book-demo.netlify.app/docs/shortcodes/hints/)
