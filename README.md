@@ -7,13 +7,13 @@
 Build the docker compose images:
 
 ```
-$ ./containers/build.sh build
+$ ./containers/local.sh -p backend build
 ```
 
 Then once the images are built run the docker containers:
 
 ```
-$ ./containers/build.sh up
+$ ./containers/local.sh -p backend up
 ```
 
 You can then run publishers and subscribers using the `debug` command to generate 30 events per second:
