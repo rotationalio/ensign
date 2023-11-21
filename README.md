@@ -18,7 +18,7 @@ $ ./containers/local.sh -p backend up
 
 ## User UI
 
-For details on how to view the Ensign user UI locally, read the [Beacon app README](https://github.com/rotationalio/ensign/tree/develop/web/beacon-app).
+For details on how to view the Ensign user UI locally, read the [Beacon app README](https://github.com/rotationalio/ensign/blob/develop/web/beacon-app/README.md).
 
 ## Documentation
 
