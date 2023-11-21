@@ -677,6 +677,7 @@ func ListAllUsers(ctx context.Context, prevPage *pagination.Cursor) (users []*Us
 		}
 		return nil, nil, err
 	}
+	defer rows.Close()
 
 	nRows := int32(0)
 	users = make([]*User, 0, prevPage.PageSize)
@@ -699,10 +700,6 @@ func ListAllUsers(ctx context.Context, prevPage *pagination.Cursor) (users []*Us
 		}
 
 		users = append(users, user)
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, nil, err
 	}
 
 	// Create the cursor to return if there is a next page of results
@@ -801,6 +798,7 @@ func ListOrgUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (
 		}
 		return nil, nil, err
 	}
+	defer rows.Close()
 
 	nRows := int32(0)
 	users = make([]*User, 0, prevPage.PageSize)
@@ -834,10 +832,6 @@ func ListOrgUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (
 			return nil, nil, err
 		}
 		users = append(users, user)
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, nil, err
 	}
 
 	// Create the cursor to return if there is a next page of results

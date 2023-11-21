@@ -181,6 +181,7 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 		}
 		return nil, nil, err
 	}
+	defer rows.Close()
 
 	// Process rows into a result page
 	nRows := int32(0)
@@ -196,10 +197,6 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 			return nil, nil, err
 		}
 		projects = append(projects, project)
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, nil, err
 	}
 
 	tx.Commit()
