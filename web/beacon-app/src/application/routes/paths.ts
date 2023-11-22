@@ -72,4 +72,5 @@ export const EXTERNAL_LINKS = {
   USE_CASES: 'https://ensign.rotational.dev/eventing/use_cases/',
   DOCS: 'https://ensign.rotational.dev/getting-started/',
   SUPPORT: 'support@rotational.io',
+  PROTECT_API_KEYS_VIDEO: 'https://youtu.be/EEpIDkKJopY',
 };

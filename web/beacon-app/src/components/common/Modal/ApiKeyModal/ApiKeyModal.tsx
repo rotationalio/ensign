@@ -1,7 +1,9 @@
 /* eslint-disable unused-imports/no-unused-vars */
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Button, Modal } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom';
 
+import { EXTERNAL_LINKS } from '@/application';
 import DownloadIcon from '@/components/icons/download-icon';
 import Copy from '@/components/ui/Copy';
 import { MIME_TYPES } from '@/constants/mimeTypes';
@@ -34,29 +36,35 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
     <>
       <Modal
         open={open}
-        title="Your API Key"
+        title={t`Your New API Key`}
         data-testid="keyCreated"
         onClose={onClose}
         containerClassName="w-[35vw]"
       >
         <>
           <div className="flex flex-col space-y-5 px-8 pb-5 text-sm">
-            <p className="my-3">
-              <span className="font-bold text-primary-900">Sweet!</span> you&apos;ve got a brand new
-              pair of <span className="line-through">roller skates</span> API keys!
+            <p className="mt-3">
+              <Trans>
+                <span className="font-bold">Your API key is ready!</span> Your API key is a unique
+                code that provides access to your topic.
+              </Trans>
             </p>
-            <div className="text-danger-500">
-              <p>For security purposes, this is the only time you will see the key.</p>
-              <p>Please copy and securely store the key.</p>
-            </div>
             <p>
-              <span className="font-semibold">Your New API Key:</span> your API key contains two
-              parts: your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
+              <Trans>
+                Your API Key contains two parts: a Client ID and Client Secret. The Client ID is the
+                unique identifier for your API key. Your Client Secret is the password for your API
+                key.
+              </Trans>
+            </p>
+            <p className="font-semibold">
+              <Trans>Your API Key:</Trans>
             </p>
             <div className="relative flex flex-col break-words rounded-md border bg-[#FBF8EC] p-3 text-xs">
               <div className="space-y-3">
                 <div className="flex flex-col pr-5">
-                  <p className="mr-1 font-semibold">Client ID:</p>
+                  <p className="mr-1 font-semibold">
+                    <Trans>Client ID:</Trans>
+                  </p>
                   <p className="items-center">
                     <span className="font-mono" data-testid="clientId">
                       {data?.client_id}
@@ -67,7 +75,9 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                   </p>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-semibold">Client Secret: </span>
+                  <span className="font-semibold">
+                    <Trans>Client Secret:</Trans>
+                  </span>
                   <p>
                     <span className="font-mono" data-testid="clientSecret">
                       {data?.client_secret}
@@ -79,21 +89,51 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                 </div>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
-                <button onClick={() => handleDownload(clientInfo, 'client')} data-testid="download">
+                <button
+                  onClick={() => handleDownload(clientInfo, `APIKey-${data?.name}-${dateCreated}`)}
+                  data-testid="download"
+                >
                   <DownloadIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
+            <p className="font-semibold">
+              <Trans>What to do next:</Trans>
+            </p>
+            <ol className="ml-5 list-decimal">
+              <li>
+                <Trans>
+                  Download and securely store the key. You'll need it to access your topic via the
+                  API. For security purposes, this is the only time you will see the key.
+                </Trans>
+              </li>
+              <li>
+                <Trans>Use your API key to connect your services or models to your topic.</Trans>
+              </li>
+            </ol>
             <div className="rounded-md bg-[#FFDDDD] p-3">
-              <h2 className="mb-3 font-semibold">CAUTION!</h2>
+              <h2 className="mb-3 font-semibold">
+                <Trans>CAUTION!</Trans>
+              </h2>
               <p>
-                We don’t recommend that you embed keys directly in your code (they’re private after
-                all!). Instead of embedding your API keys in your applications, store them in
-                environment variables or in files outside of your application&apos;s source tree.
+                <Trans>
+                  Avoid embedding API keys directly in your code. Instead, store them in environment
+                  variables or in files outside of your application's source tree. If you misplace
+                  an API key or it becomes compromised, revoke it and generate a new one.
+                </Trans>
               </p>
               <p className="mt-3">
-                If you misplace this API key or it becomes compromised, revoke it and generate a new
-                one.
+                <Trans>
+                  Watch our video on{' '}
+                  <Link
+                    to={EXTERNAL_LINKS.PROTECT_API_KEYS_VIDEO}
+                    className="underline"
+                    target="_blank"
+                  >
+                    protecting your API keys
+                  </Link>
+                  .
+                </Trans>
               </p>
             </div>
             <div className="text-center">
