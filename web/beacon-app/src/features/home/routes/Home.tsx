@@ -9,7 +9,7 @@ import WelcomeAttention from '../components/WelcomeAttention';
 export default function Home() {
   const store = useOrgStore((state) => state) as any;
   const isAuthenticated = store.isAuthenticated;
-  setCookie('isAuthenticated', isAuthenticated as string);
+  setCookie('authenticatedUser', isAuthenticated as string);
 
   return (
     <AppLayout>

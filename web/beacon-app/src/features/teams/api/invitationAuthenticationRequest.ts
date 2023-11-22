@@ -3,9 +3,9 @@ import { getValidApiResponse, Request } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 import { UserAuthResponse } from '@/features/auth';
 
-export function getInviteAuthenticationRequest(
+export function invitationAuthenticationRequest(
   request: Request
-): ApiAdapters['getInviteAuthenticationRequest'] {
+): ApiAdapters['getInvitationAuthentication'] {
   return async (token: string) => {
     const response = (await request(`${APP_ROUTE.INVITE}/accept`, {
       method: 'POST',

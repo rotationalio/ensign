@@ -1,4 +1,4 @@
-import { Heading, Toast } from '@rotational/beacon-core';
+import { Heading } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -28,46 +28,47 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
     invite_token: invitee_token,
   } as InviteAuthUser;
 
-  const { invite, authData, wasInviteAuthenticated } = useFetchInviteAuthentication(
+  const { invitationRequest, authData, wasInvitationAuthenticated } = useFetchInviteAuthentication(
     invitee_token as string
   );
 
-  const authenticated = getCookie('isAuthenticated') === 'true';
+  const authenticatedUser = getCookie('authenticatedUser') === 'true';
 
+  // If the existing invited user is authenticated, obtain the access token from the invitation
+  // and redirect the user their new team's dashboard.
   useEffect(() => {
-    if (authenticated && invitee_token) {
-      invite(invitee_token);
+    if (authenticatedUser) {
+      invitationRequest(invitee_token);
+      if (wasInvitationAuthenticated && authData?.access_token) {
+        const token = decodeToken(authData?.access_token) as any;
+        Store.setAuthUser(token, !!authData?.access_token);
+
+        navigate(APP_ROUTE.DASHBOARD);        
+      }
     }
-  }, [invitee_token, invite, authenticated]);
+  }, [
+    authenticatedUser,
+    invitationRequest,
+    invitee_token,
+    navigate,
+    Store,
+    authData,
+    wasInvitationAuthenticated,
+  ]);
 
-  console.log('authenticated', authenticated);
-  console.log('wasInviteAuthenticated', wasInviteAuthenticated);
+  // If the existing invited user is not authenticated, the user will have to submit
+  // the log in form before they're redirected to their new team's dashboard.
+  if (!authenticatedUser) {
+    if (isAuthenticated(login)) {
+      const token = decodeToken(login.auth.access_token) as any;
+      Store.setAuthUser(token, !!login.authenticated);
 
-  if (wasInviteAuthenticated && authData?.access_token) {
-    const token = decodeToken(authData.access_token) as any;
-    Store.setAuthUser(token, !!authData.authenticated);
-
-    navigate(APP_ROUTE.DASHBOARD);
-  }
-
-  if (isAuthenticated(login)) {
-    const token = decodeToken(login.auth.access_token) as any;
-    // console.log('token', token)
-
-    Store.setAuthUser(token, !!login.authenticated);
-
-    navigate(APP_ROUTE.DASHBOARD);
+      navigate(APP_ROUTE.DASHBOARD);
+    }
   }
 
   return (
     <div>
-      {login.hasAuthFailed && (
-        <Toast
-          isOpen={login.hasAuthFailed}
-          variant="danger"
-          description={(login.error as any)?.response?.data?.error}
-        />
-      )}
       <div className="pt-8 sm:px-9 md:px-16 2xl:px-40">
         <TeamInvitationCard data={data} />
       </div>

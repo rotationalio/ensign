@@ -3,20 +3,20 @@ import { useMutation } from '@tanstack/react-query';
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants';
 
-import { getInviteAuthenticationRequest } from '../api/getInviteAuthenticationRequest';
+import { invitationAuthenticationRequest } from '../api/invitationAuthenticationRequest';
 
 export function useFetchInviteAuthentication(token: string): any {
   const mutation = useMutation([RQK.INVITE_AUTHENTICATION, token], () =>
-    getInviteAuthenticationRequest(axiosInstance)(token)
+    invitationAuthenticationRequest(axiosInstance)(token)
   );
 
   return {
-    invite: mutation.mutate,
+    invitationRequest: mutation.mutate,
     reset: mutation.reset,
-    auth: mutation.data,
-    hasInviteAuthenticationFailed: mutation.isError,
-    isFetchingInviteAuthentication: mutation.isLoading,
-    wasInviteAuthenticated: mutation.isSuccess,
+    authData: mutation.data,
+    hasInvitationAuthenticationFailed: mutation.isError,
+    isFetchingInvitationAuthentication: mutation.isLoading,
+    wasInvitationAuthenticated: mutation.isSuccess,
     error: mutation.error,
   };
 }
