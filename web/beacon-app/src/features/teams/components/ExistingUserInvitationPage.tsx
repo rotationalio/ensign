@@ -43,7 +43,7 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
         const token = decodeToken(authData?.access_token) as any;
         Store.setAuthUser(token, !!authData?.access_token);
 
-        navigate(APP_ROUTE.DASHBOARD);        
+        navigate(APP_ROUTE.DASHBOARD);
       }
     }
   }, [
