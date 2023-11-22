@@ -6,6 +6,7 @@ import DownloadIcon from '@/components/icons/download-icon';
 import Copy from '@/components/ui/Copy';
 import { MIME_TYPES } from '@/constants/mimeTypes';
 import downloadFile from '@/utils/download-file';
+import { formatDate } from '@/utils/formatDate';
 
 export type ApiKeyModalProps = {
   open: boolean;
@@ -22,8 +23,10 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
     ClientSecret: data?.client_secret || '',
   });
 
+  const dateCreated = formatDate(new Date(data?.created));
+
   const onCloseHandler = () => {
-    handleDownload(clientInfo, 'client');
+    handleDownload(clientInfo, `APIKey-${data?.name}-${dateCreated}`);
     onClose();
   };
 
