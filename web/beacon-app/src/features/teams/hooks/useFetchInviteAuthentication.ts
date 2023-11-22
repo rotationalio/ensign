@@ -6,7 +6,7 @@ import { RQK } from '@/constants';
 import { invitationAuthenticationRequest } from '../api/invitationAuthenticationRequest';
 
 export function useFetchInviteAuthentication(token: string): any {
-  const mutation = useMutation([RQK.INVITE_AUTHENTICATION, token], () =>
+  const mutation = useMutation([RQK.INVITATION_AUTHENTICATION, token], () =>
     invitationAuthenticationRequest(axiosInstance)(token)
   );
 
