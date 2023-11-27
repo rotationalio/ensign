@@ -58,7 +58,7 @@ const ProjectDetailPage = () => {
           <ProjectActive onActive={setIsActive} projectID={projectID} />
         )}
         <TopicTable />
-        <APIKeysTable projectID={projectID} />
+        <APIKeysTable project={project} />
       </div>
     </AppLayout>
   );
