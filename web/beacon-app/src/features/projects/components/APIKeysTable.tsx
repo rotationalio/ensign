@@ -12,12 +12,12 @@ import { formatDate } from '@/utils/formatDate';
 
 import { getApiKeys } from '../util';
 interface APIKeysTableProps {
-  projectID: string;
+  project: any;
 }
 
 //TODO: This component needs some refactoring, this component should only be responsible for rendering the table
-export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
-  const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(projectID);
+export const APIKeysTable = ({ project }: APIKeysTableProps) => {
+  const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(project?.id);
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [openRevokeAPIKeyModal, setOpenRevokeAPIKeyModal] = useState<{
@@ -155,14 +155,19 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           />
         )}
         {isOpenAPIKeyDataModal && (
-          <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
+          <ApiKeyModal
+            open={isOpenAPIKeyDataModal}
+            projectName={project?.name}
+            keyData={key}
+            onClose={onCloseAPIKeyDataModal}
+          />
         )}
         {isOpenGenerateAPIKeyModal && (
           <GenerateAPIKeyModal
             open={isOpenGenerateAPIKeyModal}
             onClose={onCloseGenerateAPIKeyModal}
             onSetKey={setKey}
-            projectId={projectID}
+            projectId={project?.id}
           />
         )}
       </div>

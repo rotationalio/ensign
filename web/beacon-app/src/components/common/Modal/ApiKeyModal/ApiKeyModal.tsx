@@ -13,22 +13,24 @@ import { formatDate } from '@/utils/formatDate';
 export type ApiKeyModalProps = {
   open: boolean;
   onClose: () => void;
-  data: any;
+  projectName: string;
+  keyData: any;
 };
 
 const handleDownload = (data: any, filename: string) => {
   downloadFile(data, filename, MIME_TYPES.json);
 };
-export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
+export default function ApiKeyModal({ open, onClose, projectName, keyData }: ApiKeyModalProps) {
   const clientInfo = JSON.stringify({
-    ClientID: data?.client_id || '',
-    ClientSecret: data?.client_secret || '',
+    ClientID: keyData?.client_id || '',
+    ClientSecret: keyData?.client_secret || '',
   });
 
-  const dateCreated = formatDate(new Date(data?.created));
+  const dateCreated = formatDate(new Date(keyData?.created));
+  const apiKeyFileName = `APIKey-${projectName}-${keyData?.name}-${dateCreated}`;
 
   const onCloseHandler = () => {
-    handleDownload(clientInfo, `APIKey-${data?.name}-${dateCreated}`);
+    handleDownload(clientInfo, apiKeyFileName);
     onClose();
   };
 
@@ -67,10 +69,10 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                   </p>
                   <p className="items-center">
                     <span className="font-mono" data-testid="clientId">
-                      {data?.client_id}
+                      {keyData?.client_id}
                     </span>
                     <span className="ml-1 drop-shadow-md " data-testid="copyID">
-                      <Copy text={data?.client_id} />
+                      <Copy text={keyData?.client_id} />
                     </span>
                   </p>
                 </div>
@@ -80,17 +82,17 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                   </span>
                   <p>
                     <span className="font-mono" data-testid="clientSecret">
-                      {data?.client_secret}
+                      {keyData?.client_secret}
                     </span>
                     <span className="ml-1 " data-testid="copySecret">
-                      <Copy text={data?.client_secret} />
+                      <Copy text={keyData?.client_secret} />
                     </span>
                   </p>
                 </div>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
                 <button
-                  onClick={() => handleDownload(clientInfo, `APIKey-${data?.name}-${dateCreated}`)}
+                  onClick={() => handleDownload(clientInfo, apiKeyFileName)}
                   data-testid="download"
                 >
                   <DownloadIcon className="h-4 w-4" />
