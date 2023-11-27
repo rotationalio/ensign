@@ -1,13 +1,16 @@
-import { Heading, Toast } from '@rotational/beacon-core';
+import { Heading } from '@rotational/beacon-core';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
-import { isAuthenticated, useLogin } from '@/features/auth';
+import { useLogin } from '@/features/auth';
 import { LoginForm } from '@/features/auth/components';
-import { InviteAuthUser } from '@/features/auth/types/LoginService';
+import { InviteAuthUser, isAuthenticated } from '@/features/auth/types/LoginService';
 import { useOrgStore } from '@/store';
+import { getCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
+import useFetchInviteAuthentication from '../hooks/useFetchInviteAuthentication';
 import TeamInvitationCard from './TeamInvitationCard';
 
 export default function ExistingUserInvitationPage({ data }: { data: any }) {
@@ -25,30 +28,47 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
     invite_token: invitee_token,
   } as InviteAuthUser;
 
-  console.log('[data ]', initialValues);
+  const { invitationRequest, authData, wasInvitationAuthenticated } = useFetchInviteAuthentication(
+    invitee_token as string
+  );
 
-  if (isAuthenticated(login)) {
-    const token = decodeToken(login.auth.access_token) as any;
-    // console.log('token', token)
+  const authenticatedUser = getCookie('authenticatedUser') === 'true';
 
-    Store.setAuthUser(token, !!login.authenticated);
+  // If the existing invited user is authenticated, obtain the access token from the invitation
+  // and redirect the user their new team's dashboard.
+  useEffect(() => {
+    if (authenticatedUser) {
+      invitationRequest(invitee_token);
+      if (wasInvitationAuthenticated && authData?.access_token) {
+        const token = decodeToken(authData?.access_token) as any;
+        Store.setAuthUser(token, !!authData?.access_token);
 
-    // if(!login.auth?.last_login){
-    //   navigate(APP_ROUTE.GETTING_STARTED);
-    // }
-    // else{
-    navigate(APP_ROUTE.DASHBOARD);
-    //}
+        navigate(APP_ROUTE.DASHBOARD);
+      }
+    }
+  }, [
+    authenticatedUser,
+    invitationRequest,
+    invitee_token,
+    navigate,
+    Store,
+    authData,
+    wasInvitationAuthenticated,
+  ]);
+
+  // If the existing invited user is not authenticated, the user will have to submit
+  // the log in form before they're redirected to their new team's dashboard.
+  if (!authenticatedUser) {
+    if (isAuthenticated(login)) {
+      const token = decodeToken(login.auth.access_token) as any;
+      Store.setAuthUser(token, !!login.authenticated);
+
+      navigate(APP_ROUTE.DASHBOARD);
+    }
   }
+
   return (
     <div>
-      {login.hasAuthFailed && (
-        <Toast
-          isOpen={login.hasAuthFailed}
-          variant="danger"
-          description={(login.error as any)?.response?.data?.error}
-        />
-      )}
       <div className="pt-8 sm:px-9 md:px-16 2xl:px-40">
         <TeamInvitationCard data={data} />
       </div>
@@ -69,7 +89,6 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
           <LoginForm
             onSubmit={login.authenticate}
             initialValues={initialValues}
-            /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
