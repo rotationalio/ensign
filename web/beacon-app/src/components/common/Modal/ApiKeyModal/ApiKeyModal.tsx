@@ -48,7 +48,7 @@ export default function ApiKeyModal({ open, onClose, projectName, keyData }: Api
             <p className="mt-3">
               <Trans>
                 <span className="font-bold">Your API key is ready!</span> Your API key is a unique
-                code that provides access to your topic.
+                code that provides access to your project.
               </Trans>
             </p>
             <p>
@@ -105,7 +105,7 @@ export default function ApiKeyModal({ open, onClose, projectName, keyData }: Api
             <ol className="ml-5 list-decimal">
               <li>
                 <Trans>
-                  Download and securely store the key. You'll need it to access your topic via the
+                  Download and securely store the key. You'll need it to access your project via the
                   API. For security purposes, this is the only time you will see the key.
                 </Trans>
               </li>
