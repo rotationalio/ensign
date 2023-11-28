@@ -52,25 +52,42 @@ export const NewTopicModal = ({
       <Modal
         open={open}
         containerClassName="w-[25vw]"
-        title={
-          <h1>
-            <Trans>New Topic</Trans>
-          </h1>
-        }
+        title={t`Create New Data Topic`}
         onClose={handleClose}
         data-testid="topicModal"
       >
         <>
-          <p className="text-sm">
+          <p className="my-4">
             <Trans>
-              Each topic has a name that is unique across the tenant. Topic names are a combination
-              of letters, numbers, underscores, or dashes. Topic names cannot have spaces or begin
-              with an underscore or dash. Topic names are case insensitive.
+              A topic is a <span className="font-semibold">labeled</span> stream of information
+              related to your use case. So you have to name your topic to create it. Topic names
+              are:
             </Trans>
           </p>
-          <p className="mt-2 text-sm">
-            <Trans>Example topic name:</Trans> Fuzzy_Topic_Name-001
+          <ul className="mb-4 ml-5 list-outside list-disc">
+            <li>
+              <Trans>Unique and case insensitive</Trans>
+            </li>
+            <li>
+              <Trans>A combination of letters, numbers, underscores, or dashes</Trans>
+            </li>
+            <li>
+              <Trans>Cannot contain spaces or begin with a number, underscore, or dash</Trans>
+            </li>
+          </ul>
+          <p className="mb-4 mt-2">
+            <Trans>
+              We recommend a naming convention that contains a data descriptor prefix and data type
+              suffix. Examples:
+            </Trans>
           </p>
+          <ul className="mb-4 ml-5 list-outside list-disc">
+            <li>instances-json</li>
+            <li>hotels-avro</li>
+            <li>flights-parquet</li>
+            <li>weather-xml</li>
+            <li>earthquake-csv</li>
+          </ul>
           <NewTopicModalForm onSubmit={handleSubmitTopicForm} isSubmitting={isCreatingTopic} />
         </>
       </Modal>

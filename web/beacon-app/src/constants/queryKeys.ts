@@ -24,4 +24,5 @@ export const RQK = {
   TOPIC_STATS: 'topic-stats',
   PROFILE: 'profile',
   STATUS: 'status',
+  INVITATION_AUTHENTICATION: 'invitation-authentication',
 } as const;
