@@ -10,12 +10,12 @@ import { useFetchProject } from '@/features/projects/hooks/useFetchProject';
 
 import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
 import EventDetailTable from '../components/EventDetailTable';
+import EventDetailTableHeader from '../components/EventDetailTableHeader';
 import TopicQuery from '../components/TopicQuery';
 // import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import TopicStateTag from '../components/TopicStateTag';
-import EventDetailTableHeader from '../components/TopicUsage';
 import { useFetchTopic } from '../hooks/useFetchTopic';
 import { getFormattedTopicData } from '../utils';
 
