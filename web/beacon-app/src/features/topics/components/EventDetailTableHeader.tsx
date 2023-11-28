@@ -25,10 +25,11 @@ const EventDetailTableHeader = () => {
   return (
     <Heading as="h2" className="mt-8 flex gap-x-2 text-lg font-semibold">
       <Trans>Topic Usage</Trans>
-      <button onClick={refreshHandler}>
-        <div className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}>
-          <RefreshIcon />
-        </div>
+      <button
+        onClick={refreshHandler}
+        className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}
+      >
+        <RefreshIcon />
       </button>
     </Heading>
   );
