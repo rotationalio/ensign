@@ -108,7 +108,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     <Modal
       open={open}
       title={t`Customize Your API Key`}
-      containerClassName="w-[35vw]"
+      containerClassName="create-key-modal"
       onClose={onClose}
       data-testid="keyModal"
     >

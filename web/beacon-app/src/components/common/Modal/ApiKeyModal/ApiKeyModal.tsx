@@ -41,7 +41,7 @@ export default function ApiKeyModal({ open, onClose, projectName, keyData }: Api
         title={t`Your New API Key`}
         data-testid="keyCreated"
         onClose={onClose}
-        containerClassName="w-[35vw]"
+        containerClassName="download-key-modal"
       >
         <>
           <div className="flex flex-col space-y-5 px-8 pb-5 text-sm">
