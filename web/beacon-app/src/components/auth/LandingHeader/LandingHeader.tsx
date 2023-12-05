@@ -50,7 +50,7 @@ function LandingHeader() {
             </Link>
           )}
           <Link to="/" className="font-bold capitalize text-primary">
-            Ensign Beta
+            Ensign Sandbox
           </Link>
           {/* <Link to="/">
             <Button variant="tertiary" size="small">
