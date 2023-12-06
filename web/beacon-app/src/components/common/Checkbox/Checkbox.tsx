@@ -1,16 +1,25 @@
 export interface CheckboxProps {
-  onClick: () => void;
-  value: string;
+  onClick?: () => void;
+  className?: string;
+  id?: string;
+  label: string;
+  dataCy?: string;
 }
 
-function Checkbox({ value, onClick }: CheckboxProps) {
+function Checkbox({ onClick, className, id, label, dataCy }: CheckboxProps) {
   return (
-    <>
-      <label>
-        <input type="checkbox" onChange={onClick} />
-        <span className="ml-2">{value}</span>
+    <div className={className}>
+      <input
+        type="checkbox"
+        id={id}
+        className="border-2 border-gray-600"
+        onChange={onClick}
+        data-cy={dataCy}
+      />
+      <label htmlFor={id} className="ml-2">
+        {label}
       </label>
-    </>
+    </div>
   );
 }
 

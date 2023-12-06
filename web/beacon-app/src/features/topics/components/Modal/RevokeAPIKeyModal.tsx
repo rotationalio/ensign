@@ -93,10 +93,13 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
           <span className="font-bold">Key Name:</span> {key?.name}
         </div>
         <Checkbox
+          id="revokeApiKey"
+          label={t`I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance.`}
+          className="pb-8"
           onClick={handleCheckboxChange}
-          value={t`I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance.`}
+          dataCy="revoke-api-key-checkbox"
         ></Checkbox>
-        <div className="mx-auto mt-6 w-[150px] pb-4">
+        <div className="mx-auto w-[150px] pb-4">
           <Button
             variant="secondary"
             disabled={!isChecked}
