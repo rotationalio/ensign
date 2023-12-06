@@ -189,7 +189,7 @@ msgstr "By continuing, you're agreeing to the Rotational Labs Inc."
 msgid "CAUTION!"
 msgstr "CAUTION!"
 
-#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:122
+#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:120
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -594,7 +594,7 @@ msgstr "Home"
 #~ msgid "I agree to the Rotational Labs Inc."
 #~ msgstr "I agree to the Rotational Labs Inc."
 
-#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:98
+#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:97
 msgid "I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance."
 msgstr "I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance."
 
@@ -1007,7 +1007,7 @@ msgstr "Reset password request failed."
 
 #: src/features/projects/util.ts:45
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:71
-#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:112
+#: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:110
 msgid "Revoke API Key"
 msgstr "Revoke API Key"
 

@@ -1,9 +1,9 @@
 import { t, Trans } from '@lingui/macro';
-import { Button, Checkbox, Modal } from '@rotational/beacon-core';
+import { Button, Modal } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import styled from 'styled-components';
 
+import Checkbox from '@/components/common/Checkbox/Checkbox';
 import { useDeleteAPIKey } from '@/features/apiKeys/hooks/useDeleteApiKey';
 import { APIKey } from '@/features/apiKeys/types/apiKeyService';
 type RevokeAPIKeyModalProps = {
@@ -92,15 +92,13 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
         <div className="pb-6" data-cy="api-key-name">
           <span className="font-bold">Key Name:</span> {key?.name}
         </div>
-        <CheckboxFieldset onClick={handleCheckboxChange} className="pb-8" data-cy="revoke-checkbox">
-          <div className="flex items-start">
-            <Checkbox></Checkbox>
-            <Trans>
-              I understand that revoking the API key will cause publishers and subscribers to lose
-              access to the event stream (topic) and may impact performance.
-            </Trans>
-          </div>
-        </CheckboxFieldset>
+        <Checkbox
+          id="revokeApiKey"
+          label={t`I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance.`}
+          containerClassName="pb-8"
+          onClick={handleCheckboxChange}
+          dataCy="revoke-api-key-checkbox"
+        ></Checkbox>
         <div className="mx-auto w-[150px] pb-4">
           <Button
             variant="secondary"
@@ -126,11 +124,5 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
     </Modal>
   );
 };
-
-const CheckboxFieldset = styled.fieldset`
-  label svg {
-    min-width: 23px;
-  }
-`;
 
 export default RevokeAPIKeyModal;
