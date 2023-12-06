@@ -95,7 +95,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
         <Checkbox
           id="revokeApiKey"
           label={t`I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance.`}
-          className="pb-8"
+          containerClassName="pb-8"
           onClick={handleCheckboxChange}
           dataCy="revoke-api-key-checkbox"
         ></Checkbox>

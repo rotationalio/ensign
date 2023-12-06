@@ -1,14 +1,14 @@
 export interface CheckboxProps {
   onClick?: () => void;
-  className?: string;
+  containerClassName?: string;
   id?: string;
   label: string;
   dataCy?: string;
 }
 
-function Checkbox({ onClick, className, id, label, dataCy }: CheckboxProps) {
+function Checkbox({ onClick, containerClassName, id, label, dataCy }: CheckboxProps) {
   return (
-    <div className={className}>
+    <div className={containerClassName}>
       <input
         type="checkbox"
         id={id}
