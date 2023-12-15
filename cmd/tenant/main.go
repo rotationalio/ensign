@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -87,6 +90,27 @@ func main() {
 					Name:    "dry-run",
 					Aliases: []string{"d"},
 					Usage:   "show the effect of re-indexing without execution",
+				},
+			},
+		},
+		{
+			Name:     "db:cleanup",
+			Usage:    "remove all tenants and members that do not appear in the organization list",
+			Category: "client",
+			Before:   connectDB,
+			After:    closeDB,
+			Action:   cleanup,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "orgs",
+					Aliases:  []string{"f"},
+					Usage:    "path to a CSV file containing a list of organization IDs to keep",
+					Required: true,
+				},
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "show the effect of cleanup without execution",
 				},
 			},
 		},
@@ -328,6 +352,135 @@ func reindex(c *cli.Context) (err error) {
 	return nil
 }
 
+func cleanup(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	dry := c.Bool("dry-run")
+
+	// Load the organizations from the CSV file
+	var f *os.File
+	if f, err = os.Open(c.String("orgs")); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	// Ensure there is a header row
+	var header []string
+	reader := csv.NewReader(f)
+	if header, err = reader.Read(); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	// Find the ID column or assume the first column is the ID
+	var idCol int
+	for i, col := range header {
+		if strings.ToLower(col) == "id" {
+			idCol = i
+			break
+		}
+	}
+
+	orgs := make(map[ulid.ULID]struct{})
+	for {
+		var record []string
+		if record, err = reader.Read(); err != nil {
+			break
+		}
+
+		var id ulid.ULID
+		if id, err = ulid.Parse(record[idCol]); err != nil {
+			return cli.Exit(fmt.Errorf("could not parse org ID: %s", record[idCol]), 1)
+		}
+
+		orgs[id] = struct{}{}
+	}
+
+	if len(orgs) == 0 {
+		return cli.Exit(fmt.Errorf("no organizations found in CSV file"), 1)
+	}
+
+	// Fetch tenants not in the organization list
+	strandedTenants := make(map[ulid.ULID]*db.Tenant)
+	for {
+		var (
+			tenants []*db.Tenant
+			next    *pagination.Cursor
+		)
+		if tenants, next, err = db.ListTenants(ctx, ulid.ULID{}, next); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		for _, tenant := range tenants {
+			if _, ok := orgs[tenant.OrgID]; !ok {
+				strandedTenants[tenant.ID] = tenant
+			}
+		}
+
+		if next == nil {
+			break
+		}
+	}
+
+	// Fetch members not in the organization list
+	strandedMembers := make(map[ulid.ULID]*db.Member)
+	for {
+		var (
+			members []*db.Member
+			next    *pagination.Cursor
+		)
+		if members, next, err = db.ListMembers(ctx, ulid.ULID{}, next); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		for _, member := range members {
+			if _, ok := orgs[member.OrgID]; !ok {
+				strandedMembers[member.ID] = member
+			}
+		}
+
+		if next == nil {
+			break
+		}
+	}
+
+	if dry {
+		fmt.Println("The following tenants would be removed:")
+		for _, tenant := range strandedTenants {
+			fmt.Println(tenant.ID.String(), tenant.Name, tenant.Modified)
+		}
+
+		fmt.Println("The following members would be removed:")
+		for _, member := range strandedMembers {
+			fmt.Println(member.ID.String(), member.Email, member.Organization, member.Modified)
+		}
+
+		return nil
+	} else {
+		var errs error
+		fmt.Println("Removing", len(strandedTenants), "tenants and", len(strandedMembers), "members")
+		for _, tenant := range strandedTenants {
+			fmt.Println("Removing tenant", tenant.ID.String(), tenant.Name, tenant.Modified)
+			if err = db.DeleteTenant(ctx, tenant.OrgID, tenant.ID); err != nil {
+				errs = errors.Join(errs, err)
+			}
+		}
+
+		for _, member := range strandedMembers {
+			fmt.Println("Removing member", member.ID.String(), member.Email, member.Organization, member.Modified)
+			if err = db.DeleteMember(ctx, member.OrgID, member.ID); err != nil {
+				errs = errors.Join(errs, err)
+			}
+		}
+
+		if errs != nil {
+			return cli.Exit(errs, 1)
+		}
+		fmt.Println("Successfully removed", len(strandedTenants), "tenants and", len(strandedMembers), "members")
+	}
+
+	return nil
+}
+
 //===========================================================================
 // Helpers
 //===========================================================================
@@ -349,7 +502,7 @@ func connectDB(c *cli.Context) (err error) {
 	}
 	conf.ConsoleLog = false
 
-	// Connect tot he trtl server
+	// Connect to the trtl server
 	if err = db.Connect(conf.Database); err != nil {
 		return cli.Exit(err, 1)
 	}
