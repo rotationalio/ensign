@@ -20,8 +20,13 @@ function LandingFooter() {
                   <a href={ROUTES.HOME}>Ensign</a>
                 </li>
                 <li>
+                  <a href={EXTERNAL_LINKS.ENSIGN_PRICING} target="_blank" rel="noreferrer">
+                    Pricing
+                  </a>
+                </li>
+                <li>
                   <a href={EXTERNAL_LINKS.DOCUMENTATION} target="_blank" rel="noreferrer">
-                    Documentation
+                    Docs
                   </a>
                 </li>
                 <li>
@@ -40,13 +45,19 @@ function LandingFooter() {
               <h3 className="font-light">COMPANY</h3>
               <ul>
                 <li>
-                  <a href={EXTERNAL_LINKS.SERVICES}>Services</a>
+                  <a href={EXTERNAL_LINKS.SERVICES} target="_blank" rel="noreferrer">
+                    Services
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.BLOG}>Blog</a>
+                  <a href={EXTERNAL_LINKS.BLOG} target="_blank" rel="noreferrer">
+                    Blog
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.ABOUT}>About</a>
+                  <a href={EXTERNAL_LINKS.ABOUT} target="_blank" rel="noreferrer">
+                    About
+                  </a>
                 </li>
               </ul>
             </div>
@@ -54,10 +65,24 @@ function LandingFooter() {
               <h3 className="font-light">COMMUNITY</h3>
               <ul>
                 <li>
-                  <a href={EXTERNAL_LINKS.DATA_PLAYGROUND}>Data Playground</a>
+                  <a href={EXTERNAL_LINKS.ENSIGN_UNIVERSITY} target="_blank" rel="noreferrer">
+                    Ensign U
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.OPEN_SOURCE}>Open Source</a>
+                  <a href={EXTERNAL_LINKS.DATA_PLAYGROUND} target="_blank" rel="noreferrer">
+                    Data Playground
+                  </a>
+                </li>
+                <li>
+                  <a href={EXTERNAL_LINKS.OPEN_SOURCE} target="_blank" rel="noreferrer">
+                    Open Source
+                  </a>
+                </li>
+                <li>
+                  <a href={EXTERNAL_LINKS.RESOURCES} target="_blank" rel="noreferrer">
+                    Resources
+                  </a>
                 </li>
               </ul>
             </div>
@@ -114,10 +139,14 @@ function LandingFooter() {
 
             <ul className="mt-4 flex sm:mt-0">
               <li className="mr-4 border-r pr-4">
-                <a href={EXTERNAL_LINKS.PRIVACY}>Privacy Policy</a>
+                <a href={EXTERNAL_LINKS.PRIVACY} target="_blank" rel="noreferrer">
+                  Privacy Policy
+                </a>
               </li>
               <li className="">
-                <a href={EXTERNAL_LINKS.TERMS}>Terms of Use</a>
+                <a href={EXTERNAL_LINKS.TERMS} target="_blank" rel="noreferrer">
+                  Terms of Use
+                </a>
               </li>
             </ul>
           </div>

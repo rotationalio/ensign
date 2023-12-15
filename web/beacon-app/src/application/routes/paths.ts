@@ -73,4 +73,6 @@ export const EXTERNAL_LINKS = {
   DOCS: 'https://ensign.rotational.dev/getting-started/',
   SUPPORT: 'support@rotational.io',
   PROTECT_API_KEYS_VIDEO: 'https://youtu.be/EEpIDkKJopY',
+  ENSIGN_PRICING: 'https://rotational.io/ensign-pricing/',
+  RESOURCES: 'https://rotational.io/resources/',
 };
