@@ -1,7 +1,8 @@
+// import { Trans } from '@lingui/macro';
 import { memo, ReactNode, useId, useState } from 'react';
 
 // import { EXTERNAL_LINKS } from '@/application';
-// import Alert from '@/components/common/Alert/Alert';
+// import { EXTERNAL_LINKS } from '@/application';
 import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
@@ -51,10 +52,14 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
         {/* TODO: Display alert banner when user is on the sandbox. */}
         {/* <Alert>
           <div className="flex h-auto w-full flex-col items-center justify-center gap-x-4 bg-[#192E5B] py-6 text-center font-bold text-white lg:flex-row">
-            <p>You are using the Ensign Sandbox. Ready to deploy your models to production?</p>
+            <p>
+              <Trans>
+                You are using the Ensign Sandbox. Ready to deploy your models to production?
+              </Trans>
+            </p>
             <div className="mt-4 rounded-md border border-white bg-[#316D3C] py-1 px-4 lg:mt-0">
               <a href={EXTERNAL_LINKS.ENSIGN_PRICING} target="_blank" rel="noreferrer">
-                Upgrade
+                <Trans>Upgrade</Trans>
               </a>
             </div>
           </div>
