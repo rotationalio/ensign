@@ -15,6 +15,7 @@ type Claims struct {
 	OrgID       string   `json:"org,omitempty"`
 	ProjectID   string   `json:"project,omitempty"`
 	Permissions []string `json:"permissions,omitempty"`
+	AccountType string   `json:"account,omitempty"`
 }
 
 // HasPermission checks if the claims contain the specified permission.

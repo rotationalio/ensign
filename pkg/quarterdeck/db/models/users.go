@@ -1195,13 +1195,15 @@ func (u *User) Delete(tx *sql.Tx) (err error) {
 // the user has already been loaded into an organization, otherwise an error is
 // returned.
 func (u *User) NewClaims(ctx context.Context) (claims *qd.Claims, err error) {
+	// TODO: add account type from database rather than hardcoding "sandbox"
 	claims = &qd.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: u.ID.String(),
 		},
-		Name:    u.Name,
-		Email:   u.Email,
-		Picture: gravatar.New(u.Email, nil),
+		Name:        u.Name,
+		Email:       u.Email,
+		Picture:     gravatar.New(u.Email, nil),
+		AccountType: "sandbox",
 	}
 
 	// Add the orgID to the claims
