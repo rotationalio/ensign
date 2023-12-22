@@ -1,5 +1,8 @@
+// import { Trans } from '@lingui/macro';
 import { memo, ReactNode, useId, useState } from 'react';
 
+// import { EXTERNAL_LINKS } from '@/application';
+// import { EXTERNAL_LINKS } from '@/application';
 import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
@@ -45,8 +48,23 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
 
   return (
     <>
-      <Header className="flex flex-col-reverse items-baseline justify-center gap-2 bg-[#1D65A6] py-2 md:ml-[250px] md:min-h-[60px] md:border-b md:bg-white">
-        <div className="flex w-[98%] justify-between xl:w-[92.5%]">
+      <Header className="flex flex-col items-baseline justify-center gap-2 bg-[#1D65A6] md:ml-[250px] md:min-h-[60px] md:border-b md:bg-white">
+        {/* TODO: Display alert banner when user is on the sandbox. */}
+        {/* <Alert>
+          <div className="flex h-auto w-full flex-col items-center justify-center gap-x-4 bg-[#192E5B] py-6 text-center font-bold text-white lg:flex-row">
+            <p>
+              <Trans>
+                You are using the Ensign Sandbox. Ready to deploy your models to production?
+              </Trans>
+            </p>
+            <div className="mt-4 rounded-md border border-white bg-[#316D3C] py-1 px-4 lg:mt-0">
+              <a href={EXTERNAL_LINKS.ENSIGN_PRICING} target="_blank" rel="noreferrer">
+                <Trans>Upgrade</Trans>
+              </a>
+            </div>
+          </div>
+        </Alert> */}
+        <div className="flex w-[98%] justify-between py-2 xl:w-[92.5%]">
           {isOnboarded ? (
             <>
               {CustomBreadcrumbs ? (
