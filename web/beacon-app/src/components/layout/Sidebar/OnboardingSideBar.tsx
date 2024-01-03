@@ -17,7 +17,7 @@ function OnboardingSideBar({ className }: SidebarProps) {
     <>
       <aside
         className={cn(
-          `fixed top-0 left-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white md:w-[250px]`,
+          `fixed left-0 top-0 flex h-screen flex-col bg-[#1D65A6] pb-10 pt-5 text-white md:w-[250px]`,
           className
         )}
       >

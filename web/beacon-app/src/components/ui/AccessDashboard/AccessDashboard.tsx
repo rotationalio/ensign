@@ -8,7 +8,7 @@ function AccessDashboard() {
   return (
     <div>
       <HeavyCheckMark />
-      <div className="mt-4 ml-5">
+      <div className="ml-5 mt-4">
         <Link to={PATH_DASHBOARD.HOME}>
           <span className="text-primary underline">View/Edit</span>
         </Link>

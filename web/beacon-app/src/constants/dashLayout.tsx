@@ -96,7 +96,7 @@ export const footerItems = [
     isExternal: true,
   },
   {
-    name: <Trans>&copy; Rotational Labs, Inc</Trans>,
+    name: <Trans>&copy; Rotational Labs, Inc.</Trans>,
     href: EXTERNAL_LINKS.ROTATIONAL,
     isExternal: true,
   },
