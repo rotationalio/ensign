@@ -207,7 +207,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
       </div>
     </div>
     <div
-      class="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white"
+      class="shadow-md max-h-[480px] min-h-20 overflow-y-auto bg-black p-4 text-white"
     >
       <pre
         class="font-base mx-auto"
