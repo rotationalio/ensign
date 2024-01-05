@@ -15,7 +15,7 @@ type ErrorPageProps = {
 export const render404 = () => {
   return (
     <section className="mx-auto my-20  flex max-w-4xl place-items-center items-center justify-center rounded-lg border border-solid border-primary-800 text-2xl">
-      <div className="my-10 mx-auto max-w-xl">
+      <div className="mx-auto my-10 max-w-xl">
         <h1 className="mt-4 text-2xl font-bold text-gray-800">
           <Trans>Sorry, we can’t find that page. (404)</Trans>
         </h1>
@@ -44,7 +44,7 @@ export default function ErrorPage({ errorMessage, errorCause, errorTitle }: Erro
       className="mx-auto my-20  flex max-w-4xl place-items-center items-center justify-center rounded-lg border border-solid border-primary-800 text-2xl"
       data-testid="error-page"
     >
-      <div className="my-10 mx-auto max-w-xl">
+      <div className="mx-auto my-10 max-w-xl">
         <h1 className="text-2xl font-bold text-gray-800">
           {' '}
           {errorTitle || t`Sorry, we’re having trouble loading this page.`}
