@@ -10,7 +10,7 @@ import { TbPlayFootball } from 'react-icons/tb';
 import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
 
-/* TODO: Verify if styles are used and remove if they're not. */
+/* TODO: Verify if styles are used and remove if not. */
 export const SIDEBAR_WIDTH = 0;
 export const TOPBAR_HEIGHT = 0;
 
