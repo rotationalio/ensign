@@ -10,8 +10,9 @@ import { TbPlayFootball } from 'react-icons/tb';
 import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
 
-export const SIDEBAR_WIDTH = 250;
-export const TOPBAR_HEIGHT = 60;
+/* TODO: Verify if styles are used and remove if they're not. */
+export const SIDEBAR_WIDTH = 0;
+export const TOPBAR_HEIGHT = 0;
 
 export const menuItems: MenuItem[] = [
   {

@@ -30,7 +30,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   return (
     <>
       <Topbar Breadcrumbs={Breadcrumbs} isOnboarded={isOnboarded} profileData={loaderData} />
-      {/* TODO: Add Sandbox Alert component here. Must add a check for the user's account type
+      {/* TODO: Move to a SandboxAlert component and add a check for the user's account type
       and only display if they are a sandbox user. */}
       <Alert>
         <div className="flex h-auto w-full flex-col items-center justify-center gap-x-4 bg-[#192E5B] py-6 text-center font-bold text-white lg:flex-row">
