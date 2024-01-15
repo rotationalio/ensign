@@ -1,11 +1,13 @@
+import { Trans } from '@lingui/macro';
 import { Container } from '@rotational/beacon-core';
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { PATH_DASHBOARD } from '@/application';
+import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 
+import Alert from '../common/Alert/Alert';
 import Topbar from './Topbar';
 
 type PageProps = {
@@ -28,6 +30,22 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   return (
     <>
       <Topbar Breadcrumbs={Breadcrumbs} isOnboarded={isOnboarded} profileData={loaderData} />
+      {/* TODO: Add Sandbox Alert component here. Must add a check for the user's account type
+      and only display if they are a sandbox user. */}
+      <Alert>
+        <div className="flex h-auto w-full flex-col items-center justify-center gap-x-4 bg-[#192E5B] py-6 text-center font-bold text-white lg:flex-row">
+          <p>
+            <Trans>
+              You are using the Ensign Sandbox. Ready to deploy your models to production?
+            </Trans>
+          </p>
+          <div className="mt-4 rounded-md border border-white bg-[#316D3C] px-4 py-1 lg:mt-0">
+            <a href={EXTERNAL_LINKS.ENSIGN_PRICING} target="_blank" rel="noreferrer">
+              <Trans>Upgrade</Trans>
+            </a>
+          </div>
+        </div>
+      </Alert>
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>

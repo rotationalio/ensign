@@ -5,14 +5,15 @@ import OvalLoader from '@/components/ui/OvalLoader';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 import { useAuth } from '@/hooks/useAuth';
-const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
+// const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
 const OnboardingLayout = React.lazy(() => import('@/components/layout/OnboardingLayout'));
+const SandboxLayout = React.lazy(() => import('@/components/layout/SandboxLayout'));
 
 const PrivateRoute = () => {
   const { profile: userProfile } = useFetchProfile();
   const { isAuthenticated } = useAuth();
   const isOnboarded = isOnboardedMember(userProfile?.onboarding_status);
-  const Layout = isOnboarded ? DashLayout : OnboardingLayout;
+  const Layout = isOnboarded ? SandboxLayout : OnboardingLayout;
 
   return isAuthenticated ? (
     <Suspense
