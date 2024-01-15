@@ -44,7 +44,7 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
   });
 
   return (
-    <div className="flex flex-col items-baseline justify-center gap-2 overflow-auto bg-[#1D65A6] py-3 md:border-b md:bg-white">
+    <div className="flex flex-col items-baseline justify-center gap-2 overflow-auto bg-[#1D65A6] py-4 md:border-b md:bg-white">
       <div className="flex w-[98%] justify-between py-2 xl:w-[92.5%]">
         {isOnboarded ? (
           <>
@@ -73,7 +73,7 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
         ) : (
           <>
             <span></span>
-            <div className="flex h-20  items-center justify-end">
+            <div className="flex items-center justify-end">
               <ProfileCard
                 picture={profileData?.picture}
                 owner_name={profileData?.email}

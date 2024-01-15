@@ -1,13 +1,13 @@
-import { Trans } from '@lingui/macro';
+// import { Trans } from '@lingui/macro';
 import { Container } from '@rotational/beacon-core';
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
+import { /* EXTERNAL_LINKS, */ PATH_DASHBOARD } from '@/application';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 
-import Alert from '../common/Alert/Alert';
+// import Alert from '../common/Alert/Alert';
 import Topbar from './Topbar';
 
 type PageProps = {
@@ -32,7 +32,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
       <Topbar Breadcrumbs={Breadcrumbs} isOnboarded={isOnboarded} profileData={loaderData} />
       {/* TODO: Move to a SandboxAlert component and add a check for the user's account type
       and only display if they are a sandbox user. */}
-      <Alert>
+      {/*  <Alert>
         <div className="flex h-auto w-full flex-col items-center justify-center gap-x-4 bg-[#192E5B] py-6 text-center font-bold text-white lg:flex-row">
           <p>
             <Trans>
@@ -45,7 +45,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
             </a>
           </div>
         </div>
-      </Alert>
+      </Alert> */}
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>
