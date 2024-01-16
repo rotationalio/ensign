@@ -1,4 +1,4 @@
-import getInitials from '@/utils/getInitials';
+import { getInitials } from '@/utils/getInitials';
 
 type ProfileAvatar = {
   name: string;
