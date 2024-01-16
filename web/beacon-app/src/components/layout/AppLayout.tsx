@@ -6,7 +6,7 @@ import { PATH_DASHBOARD } from '@/application';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 import { isSandboxAccount } from '@/features/sandbox/util/utils';
-import { useOrgStore } from '@/store';
+import useAccountType from '@/hooks/useAccountType';
 
 import SandboxBanner from './SanboxBanner/SandboxBanner';
 import Topbar from './Topbar';
@@ -21,8 +21,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   const { profile: loaderData } = useFetchProfile();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
-  const state = useOrgStore((state: any) => state) as any;
-  const accountType = state.account as string;
+  const accountType = useAccountType();
   const isSandboxAcct = isSandboxAccount(accountType);
 
   // if onboarded redirect to onboarded route
