@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
 const OnboardingLayout = React.lazy(() => import('@/components/layout/OnboardingLayout'));
+const SandboxLayout = React.lazy(() => import('@/components/layout/SandboxLayout'));
 
 const PrivateRoute = () => {
   const { profile: userProfile } = useFetchProfile();
@@ -17,10 +18,15 @@ const PrivateRoute = () => {
 
   const state = useOrgStore((state: any) => state) as any;
   const accountType = state.account as string;
-  const isSandbox = isSandboxAccount(accountType);
-  console.log('isSandbox', isSandbox);
+  const isSandboxAcct = isSandboxAccount(accountType);
 
-  const Layout = isOnboarded ? DashLayout : OnboardingLayout;
+  let Layout = OnboardingLayout;
+
+  if (isOnboarded && isSandboxAcct) {
+    Layout = SandboxLayout;
+  } else if (isOnboarded && !isSandboxAcct) {
+    Layout = DashLayout;
+  }
 
   return isAuthenticated ? (
     <Suspense
