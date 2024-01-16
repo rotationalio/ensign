@@ -5,8 +5,8 @@ import OvalLoader from '@/components/ui/OvalLoader';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 import { isSandboxAccount } from '@/features/sandbox/util/utils';
+import useAccountType from '@/hooks/useAccountType';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrgStore } from '@/store';
 const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
 const OnboardingLayout = React.lazy(() => import('@/components/layout/OnboardingLayout'));
 const SandboxLayout = React.lazy(() => import('@/components/layout/SandboxLayout'));
@@ -16,8 +16,7 @@ const PrivateRoute = () => {
   const { isAuthenticated } = useAuth();
   const isOnboarded = isOnboardedMember(userProfile?.onboarding_status);
 
-  const state = useOrgStore((state: any) => state) as any;
-  const accountType = state.account as string;
+  const accountType = useAccountType();
   const isSandboxAcct = isSandboxAccount(accountType);
 
   let Layout = OnboardingLayout;
