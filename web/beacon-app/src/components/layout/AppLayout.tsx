@@ -6,6 +6,7 @@ import { PATH_DASHBOARD } from '@/application';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 
+// import SandboxBanner from './SanboxBanner/SandboxBanner';
 import Topbar from './Topbar';
 
 type PageProps = {
@@ -28,6 +29,9 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   return (
     <>
       <Topbar Breadcrumbs={Breadcrumbs} isOnboarded={isOnboarded} profileData={loaderData} />
+      {/* TODO: Display SandboxBanner only to user's with the sandbox account type. 
+      <SandboxBanner />
+      */}
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>
