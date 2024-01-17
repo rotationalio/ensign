@@ -1,7 +1,7 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import OnboardingLayout from '../OnboardingLayout';
 
@@ -11,8 +11,8 @@ const renderOnboardingLayout = () => {
   return render(
     <QueryClientProvider client={queryClient}>
       <OnboardingLayout />
-  </QueryClientProvider>
-  )
+    </QueryClientProvider>
+  );
 };
 
 // Mock t and Trans tags from lingui.
