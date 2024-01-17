@@ -581,3 +581,585 @@ exports[`Onboarding layout > should render 1`] = `
   </div>
 </div>
 `;
+
+exports[`Sandbox layout > should render 1`] = `
+<div>
+  <div
+    class="flex flex-col md:pl-[250px]"
+    data-testid="sandbox-layout"
+  >
+    <aside
+      class="fixed left-0 top-0 flex h-screen flex-col bg-[#1D65A6] pb-10 pt-5 text-white md:w-[250px] hidden md:block"
+    >
+      <div
+        class="flex h-full flex-col"
+        data-cy="sandbox-sidebar"
+        data-testid="sandbox-sidebar"
+      >
+        <div
+          class="grow"
+        >
+          <h1
+            class="ml-8 space-y-3 text-lg font-bold"
+          >
+            Ensign Sandbox
+          </h1>
+          <div
+            class="ml-8 flex items-center gap-3 pt-6 text-sm"
+          >
+            <span
+              class="sc-dIfARi dnuqME"
+            />
+            <h2
+              data-cy="org-name"
+              data-testid="org-name"
+            >
+              <svg
+                class="sc-gswNZR kcBpKX flex"
+                viewBox="0 0 50 50"
+              >
+                <circle
+                  class="path"
+                  cx="25"
+                  cy="25"
+                  fill="none"
+                  r="20"
+                  stroke-width="2"
+                />
+              </svg>
+              <br />
+            </h2>
+          </div>
+          <div
+            class="pt-8"
+          >
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="currentColor"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 1024 1024"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M946.5 505L560.1 118.8l-25.9-25.9a31.5 31.5 0 0 0-44.4 0L77.5 505a63.9 63.9 0 0 0-18.8 46c.4 35.2 29.7 63.3 64.9 63.3h42.5V940h691.8V614.3h43.4c17.1 0 33.2-6.7 45.3-18.8a63.6 63.6 0 0 0 18.7-45.3c0-17-6.7-33.1-18.8-45.2zM568 868H456V664h112v204zm217.9-325.7V868H632V640c0-22.1-17.9-40-40-40H432c-22.1 0-40 17.9-40 40v228H238.1V542.3h-96l370-369.7 23.1 23.1L882 542.3h-96.1z"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Home
+                 
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="currentColor"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 1024 1024"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M280 752h80c4.4 0 8-3.6 8-8V280c0-4.4-3.6-8-8-8h-80c-4.4 0-8 3.6-8 8v464c0 4.4 3.6 8 8 8zm192-280h80c4.4 0 8-3.6 8-8V280c0-4.4-3.6-8-8-8h-80c-4.4 0-8 3.6-8 8v184c0 4.4 3.6 8 8 8zm192 72h80c4.4 0 8-3.6 8-8V280c0-4.4-3.6-8-8-8h-80c-4.4 0-8 3.6-8 8v256c0 4.4 3.6 8 8 8zm216-432H144c-17.7 0-32 14.3-32 32v736c0 17.7 14.3 32 32 32h736c17.7 0 32-14.3 32-32V144c0-17.7-14.3-32-32-32zm-40 728H184V184h656v656z"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Projects
+                 
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="currentColor"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 1024 1024"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M824.2 699.9a301.55 301.55 0 0 0-86.4-60.4C783.1 602.8 812 546.8 812 484c0-110.8-92.4-201.7-203.2-200-109.1 1.7-197 90.6-197 200 0 62.8 29 118.8 74.2 155.5a300.95 300.95 0 0 0-86.4 60.4C345 754.6 314 826.8 312 903.8a8 8 0 0 0 8 8.2h56c4.3 0 7.9-3.4 8-7.7 1.9-58 25.4-112.3 66.7-153.5A226.62 226.62 0 0 1 612 684c60.9 0 118.2 23.7 161.3 66.8C814.5 792 838 846.3 840 904.3c.1 4.3 3.7 7.7 8 7.7h56a8 8 0 0 0 8-8.2c-2-77-33-149.2-87.8-203.9zM612 612c-34.2 0-66.4-13.3-90.5-37.5a126.86 126.86 0 0 1-37.5-91.8c.3-32.8 13.4-64.5 36.3-88 24-24.6 56.1-38.3 90.4-38.7 33.9-.3 66.8 12.9 91 36.6 24.8 24.3 38.4 56.8 38.4 91.4 0 34.2-13.3 66.3-37.5 90.5A127.3 127.3 0 0 1 612 612zM361.5 510.4c-.9-8.7-1.4-17.5-1.4-26.4 0-15.9 1.5-31.4 4.3-46.5.7-3.6-1.2-7.3-4.5-8.8-13.6-6.1-26.1-14.5-36.9-25.1a127.54 127.54 0 0 1-38.7-95.4c.9-32.1 13.8-62.6 36.3-85.6 24.7-25.3 57.9-39.1 93.2-38.7 31.9.3 62.7 12.6 86 34.4 7.9 7.4 14.7 15.6 20.4 24.4 2 3.1 5.9 4.4 9.3 3.2 17.6-6.1 36.2-10.4 55.3-12.4 5.6-.6 8.8-6.6 6.3-11.6-32.5-64.3-98.9-108.7-175.7-109.9-110.9-1.7-203.3 89.2-203.3 199.9 0 62.8 28.9 118.8 74.2 155.5-31.8 14.7-61.1 35-86.5 60.4-54.8 54.7-85.8 126.9-87.8 204a8 8 0 0 0 8 8.2h56.1c4.3 0 7.9-3.4 8-7.7 1.9-58 25.4-112.3 66.7-153.5 29.4-29.4 65.4-49.8 104.7-59.7 3.9-1 6.5-4.7 6-8.7z"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Team
+                 
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="none"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 24 24"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    clip-rule="evenodd"
+                    d="M16 9C16 11.2091 14.2091 13 12 13C9.79086 13 8 11.2091 8 9C8 6.79086 9.79086 5 12 5C14.2091 5 16 6.79086 16 9ZM14 9C14 10.1046 13.1046 11 12 11C10.8954 11 10 10.1046 10 9C10 7.89543 10.8954 7 12 7C13.1046 7 14 7.89543 14 9Z"
+                    fill="currentColor"
+                    fill-rule="evenodd"
+                  />
+                  <path
+                    clip-rule="evenodd"
+                    d="M12 1C5.92487 1 1 5.92487 1 12C1 18.0751 5.92487 23 12 23C18.0751 23 23 18.0751 23 12C23 5.92487 18.0751 1 12 1ZM3 12C3 14.0902 3.71255 16.014 4.90798 17.5417C6.55245 15.3889 9.14627 14 12.0645 14C14.9448 14 17.5092 15.3531 19.1565 17.4583C20.313 15.9443 21 14.0524 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12ZM12 21C9.84977 21 7.87565 20.2459 6.32767 18.9878C7.59352 17.1812 9.69106 16 12.0645 16C14.4084 16 16.4833 17.1521 17.7538 18.9209C16.1939 20.2191 14.1881 21 12 21Z"
+                    fill="currentColor"
+                    fill-rule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Profile
+                 
+              </span>
+            </div>
+            <div
+              class="mx-8 my-5 border-b border-b-white"
+            />
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="currentColor"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M256 368a16 16 0 01-7.94-2.11L108 285.84a8 8 0 00-12 6.94V368a16 16 0 008.23 14l144 80a16 16 0 0015.54 0l144-80a16 16 0 008.23-14v-75.22a8 8 0 00-12-6.94l-140.06 80.05A16 16 0 01256 368z"
+                  />
+                  <path
+                    d="M495.92 190.5v-.11a16 16 0 00-8-12.28l-224-128a16 16 0 00-15.88 0l-224 128a16 16 0 000 27.78l224 128a16 16 0 0015.88 0L461 221.28a2 2 0 013 1.74v144.53c0 8.61 6.62 16 15.23 16.43A16 16 0 00496 368V192a14.76 14.76 0 00-.08-1.5z"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Ensign U
+                 
+                <svg
+                  class="ml-1 h-3 w-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Use Cases
+                 
+                <svg
+                  class="ml-1 h-3 w-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Docs
+                 
+                <svg
+                  class="ml-1 h-3 w-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="none"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M0 0h24v24H0z"
+                    fill="none"
+                    stroke="none"
+                  />
+                  <path
+                    d="M11 4a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"
+                  />
+                  <path
+                    d="M3 17l5 1l.75 -1.5"
+                  />
+                  <path
+                    d="M14 21v-4l-4 -3l1 -6"
+                  />
+                  <path
+                    d="M6 12v-3l5 -1l3 3l3 1"
+                  />
+                  <path
+                    d="M19.5 20a.5 .5 0 1 0 0 -1a.5 .5 0 0 0 0 1z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                Data Playground
+                 
+                <svg
+                  class="ml-1 h-3 w-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <span
+                class="relative z-[1] mr-3 w-[24px] text-white"
+              >
+                <svg
+                  fill="currentColor"
+                  font-size="24"
+                  height="1em"
+                  stroke="currentColor"
+                  stroke-width="0"
+                  viewBox="0 0 16 16"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z"
+                  />
+                </svg>
+              </span>
+              <span
+                class="relative z-[1] flex font-normal"
+              >
+                SDKs
+                 
+                <svg
+                  class="ml-1 h-3 w-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              class="mb-2 min-h-[8px] list-none text-white last:mb-0"
+            >
+              <a
+                class="flex h-12 items-center whitespace-nowrap pl-8 text-sm"
+                href="mailto:support@rotational.io"
+              >
+                <span
+                  class="relative z-[1] mr-3 w-[24px] text-white"
+                >
+                  <svg
+                    fill="currentColor"
+                    font-size="24"
+                    height="1em"
+                    stroke="currentColor"
+                    stroke-width="0"
+                    viewBox="0 0 24 24"
+                    width="1em"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0 0h24v24H0V0z"
+                      fill="none"
+                    />
+                    <path
+                      d="M11 23.59v-3.6c-5.01-.26-9-4.42-9-9.49C2 5.26 6.26 1 11.5 1S21 5.26 21 10.5c0 4.95-3.44 9.93-8.57 12.4l-1.43.69zM11.5 3C7.36 3 4 6.36 4 10.5S7.36 18 11.5 18H13v2.3c3.64-2.3 6-6.08 6-9.8C19 6.36 15.64 3 11.5 3zm-1 11.5h2v2h-2zm2-1.5h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"
+                    />
+                  </svg>
+                </span>
+                <span
+                  class="relative z-[1] flex"
+                >
+                  Support
+                  <svg
+                    class="ml-1 h-3 w-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          class="ml-8 mt-5 space-y-3"
+        >
+          <ul
+            class="space-y-1 text-xs text-white"
+          >
+            <li>
+              About
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              Contact Us
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              Server Status
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              © Rotational Labs, Inc.
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+          </ul>
+          <section
+            class="w-full text-xs text-white"
+          >
+            <span>
+              App Version 
+              0.0.0
+               & 
+            </span>
+            <span>
+              Git Revision 
+              0.0.0
+            </span>
+          </section>
+        </div>
+      </div>
+    </aside>
+    <div />
+    <footer
+      class="fixed bottom-0 left-0 w-screen bg-[#1D65A6] py-1 md:hidden md:pl-[250px]"
+    >
+      <ul
+        class="flex items-center justify-around space-y-1 text-xs text-white"
+      >
+        <li>
+          About
+        </li>
+        <li>
+          Contact Us
+        </li>
+        <li>
+          Server Status
+        </li>
+        <li>
+          © Rotational Labs, Inc.
+        </li>
+      </ul>
+    </footer>
+  </div>
+</div>
+`;
