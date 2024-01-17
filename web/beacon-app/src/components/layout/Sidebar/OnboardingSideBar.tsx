@@ -21,7 +21,7 @@ function OnboardingSideBar({ className }: SidebarProps) {
           className
         )}
       >
-        <div className="flex h-full flex-col" data-cy="onboarding-sidebar">
+        <div className="flex h-full flex-col" data-testid="onboarding-sidebar" data-cy="onboarding-sidebar">
           <div>
             <Heading as="h1" className="ml-8 space-y-3 text-lg font-bold">
               Ensign

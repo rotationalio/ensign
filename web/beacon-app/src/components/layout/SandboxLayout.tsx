@@ -7,7 +7,7 @@ type SandboxLayoutProps = {
 
 function SandboxLayout({ children }: SandboxLayoutProps) {
   return (
-    <div className="flex flex-col md:pl-[250px]">
+    <div className="flex flex-col md:pl-[250px]" data-testid="sandbox-layout">
       <SandboxSidebar className="hidden md:block" />
       <div>{children}</div>
       <MobileFooter />
