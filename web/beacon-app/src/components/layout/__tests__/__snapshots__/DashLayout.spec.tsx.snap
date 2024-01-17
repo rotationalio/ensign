@@ -4,7 +4,6 @@ exports[`DashLayout > should render the component 1`] = `
 <div>
   <div
     class="flex flex-col md:pl-[250px]"
-    data-testid="dash-layout"
   >
     <div
       class="text-center"

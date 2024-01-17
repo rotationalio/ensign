@@ -1,0 +1,224 @@
+// Vitest Snapshot v1
+
+exports[`Onboarding layout > should render 1`] = `
+<div>
+  <div
+    class="flex flex-col md:pl-[250px]"
+    data-testid="onboarding-layout"
+  >
+    <aside
+      class="fixed left-0 top-0 flex h-screen flex-col bg-[#1D65A6] pb-10 pt-5 text-white md:w-[250px] hidden md:block"
+    >
+      <div
+        class="flex h-full flex-col"
+        data-cy="onboarding-sidebar"
+        data-testid="onboarding-sidebar"
+      >
+        <div>
+          <h1
+            class="ml-8 space-y-3 text-lg font-bold"
+          >
+            Ensign
+          </h1>
+        </div>
+        <div
+          class="ml-8 mt-[90px] space-y-3"
+        >
+          <ol
+            class="stepper-items relative border-l border-gray-200 text-white"
+          >
+            <li
+              class="mb-10 ml-6"
+            >
+              <span
+                class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+              />
+              <h3
+                class="font-medium leading-tight"
+              >
+                Step 1 of 4
+              </h3>
+              <p
+                class="text-sm "
+              >
+                Your Team Name
+              </p>
+            </li>
+            <li
+              class="mb-10 ml-6"
+            >
+              <span
+                class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+              />
+              <h3
+                class="font-medium leading-tight"
+              >
+                Step 2 of 4
+              </h3>
+              <p
+                class="text-sm "
+              >
+                Your Workspace URL
+              </p>
+            </li>
+            <li
+              class="mb-10 ml-6"
+            >
+              <span
+                class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+              />
+              <h3
+                class="font-medium leading-tight"
+              >
+                Step 3 of 4
+              </h3>
+              <p
+                class="text-sm "
+              >
+                Your Name
+              </p>
+            </li>
+            <li
+              class="mb-10 ml-6"
+            >
+              <span
+                class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+              />
+              <h3
+                class="font-medium leading-tight"
+              >
+                Step 4 of 4
+              </h3>
+              <p
+                class="text-sm "
+              >
+                Your Goals
+              </p>
+            </li>
+          </ol>
+        </div>
+        <div
+          class="grow"
+        />
+        <div
+          class="ml-8 space-y-3"
+        >
+          <ul
+            class="space-y-1 text-xs text-white"
+          >
+            <li>
+              About
+               
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              Contact Us
+               
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              Server Status
+               
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+            <li>
+              © Rotational Labs, Inc.
+               
+              <svg
+                class="ml-1 h-3 w-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </li>
+          </ul>
+          <p
+            class="w-full text-xs text-white"
+          >
+            <span>
+              App Version 
+              0.0.0
+               
+            </span>
+            <span>
+              & Git Revision 
+              0.0.0
+               
+            </span>
+          </p>
+        </div>
+      </div>
+    </aside>
+    <main
+      class="sc-bcXHqe cfhwRd"
+    />
+    <footer
+      class="fixed bottom-0 left-0 w-screen bg-[#1D65A6] py-1 md:hidden md:pl-[250px]"
+    >
+      <ul
+        class="flex items-center justify-around space-y-1 text-xs text-white"
+      >
+        <li>
+          About
+        </li>
+        <li>
+          Contact Us
+        </li>
+        <li>
+          Server Status
+        </li>
+        <li>
+          © Rotational Labs, Inc.
+        </li>
+      </ul>
+    </footer>
+  </div>
+</div>
+`;

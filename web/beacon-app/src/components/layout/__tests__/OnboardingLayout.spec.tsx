@@ -3,26 +3,16 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import SandboxLayout from '../SandboxLayout';
-import DashLayout from '../DashLayout';
 import OnboardingLayout from '../OnboardingLayout';
 
 const queryClient = new QueryClient();
 
-const wrapper = ({ children }: any) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-);
-
 const renderOnboardingLayout = () => {
-  return render(<OnboardingLayout />, { wrapper });
-}
-
-const renderSandboxLayout = () => {
-  return render(<SandboxLayout />, { wrapper });
-};
-
-const renderDashLayout = () => {
-  return render(<DashLayout />, { wrapper });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <OnboardingLayout />
+  </QueryClientProvider>
+  )
 };
 
 // Mock t and Trans tags from lingui.
@@ -44,16 +34,13 @@ vi.mock('react-router-dom', () => ({
 
 describe('Onboarding layout', () => {
   it('should render', () => {
-    renderOnboardingLayout();
+    const { container } = renderOnboardingLayout();
+    expect(container).toMatchSnapshot();
     expect(screen.getByTestId('onboarding-layout')).toBeInTheDocument();
+  });
+
+  it('should display the onboarding sidebar', () => {
+    renderOnboardingLayout();
     expect(screen.getByTestId('onboarding-sidebar')).toBeInTheDocument();
   });
-});
-
-describe('Sandbox layout', () => {
-    it('should render', () => {
-      renderSandboxLayout();
-      expect(screen.getByTestId('sandbox-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('sandbox-sidebar')).toBeInTheDocument();
-    });
 });

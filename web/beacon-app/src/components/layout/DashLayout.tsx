@@ -13,7 +13,7 @@ const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
   const { wasProfileFetched, isFetchingProfile } = useDashOnboarding();
 
   return (
-    <div className="flex flex-col md:pl-[250px]" data-testid="dash-layout">
+    <div className="flex flex-col md:pl-[250px]">
       {isFetchingProfile && <Loader />}
       {wasProfileFetched ? (
         <>
