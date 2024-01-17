@@ -32,14 +32,15 @@ vi.mock('react-router-dom', () => ({
   NavLink: ({ children }) => children,
 }));
 
-describe('Onboarding layout', () => {
+describe('Sandbox layout', () => {
   it('should render', () => {
     const { container } = renderSandboxLayout();
     expect(container).toMatchSnapshot();
     expect(screen.getByTestId('sandbox-layout')).toBeInTheDocument();
+  });
 
   it('should display the sandbox sidebar', () => {
+    renderSandboxLayout();
     expect(screen.getByTestId('sandbox-sidebar')).toBeInTheDocument();
     });
-  });
 });
