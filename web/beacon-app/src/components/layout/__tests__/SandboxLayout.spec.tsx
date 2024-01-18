@@ -43,4 +43,16 @@ describe('Sandbox layout', () => {
     renderSandboxLayout();
     expect(screen.getByTestId('sandbox-sidebar')).toBeInTheDocument();
   });
+
+  it('should not display the onboarding layout or onboarding sidebar', () => {
+    renderSandboxLayout();
+    expect(screen.queryByTestId('onboarding-layout')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('onboarding-sidebar')).not.toBeInTheDocument();
+  });
+
+  it('should not display the dash layout or sidebar', () => {
+    renderSandboxLayout();
+    expect(screen.queryByTestId('dash-layout')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
+  });
 });
