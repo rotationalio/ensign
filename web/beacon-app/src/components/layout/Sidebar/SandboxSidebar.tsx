@@ -34,10 +34,10 @@ function SandboxSidebar({ className }: SandboxSidebarProps) {
           data-cy="sandbox-sidebar"
         >
           <div className="grow">
-            <Heading as="h1" className="ml-8 space-y-3 text-lg font-bold">
+            <Heading as="h1" className="ml-8 space-y-3 pt-1 text-lg font-bold">
               Ensign Sandbox
             </Heading>
-            <div className="ml-8 flex items-center gap-3 pt-6 text-sm">
+            <div className="ml-8 flex items-center gap-3 pt-8 text-sm">
               <Avatar
                 alt={appState?.name || userInfo?.organization}
                 src={appState?.picture || userInfo?.picture}

@@ -8,7 +8,7 @@ type OnboardingLayoutProps = {
 
 const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ children }) => {
   return (
-    <div className="flex flex-col md:pl-[250px]">
+    <div className="flex flex-col md:pl-[250px]" data-testid="onboarding-layout">
       <OnBoardingSidebar className="hidden md:block" />
       <MainStyle>{children}</MainStyle>
       <MobileFooter />
