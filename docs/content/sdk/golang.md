@@ -91,7 +91,7 @@ go run main.go
 
 If you see a message like the following, then congratulations! You've successfully connected to Ensign!
 
-```HEALTHY 0.12.4-beta.18 ([GIT HASH])```
+```HEALTHY 0.12.5-beta.20 ([GIT HASH])```
 
 ### Make Some Data
 

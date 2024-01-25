@@ -6,9 +6,9 @@ import "fmt"
 const (
 	VersionMajor         = 0
 	VersionMinor         = 12
-	VersionPatch         = 4
+	VersionPatch         = 5
 	VersionReleaseLevel  = "beta"
-	VersionReleaseNumber = 19
+	VersionReleaseNumber = 20
 )
 
 // Set the GitVersion via -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=$(git rev-parse --short HEAD)'"
