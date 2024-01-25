@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { t,Trans } from '@lingui/macro';
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
@@ -9,7 +10,6 @@ import styled from 'styled-components';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
-import { useOrgStore } from '@/store';
 
 import generateAPIKeyValidationSchema from '../schemas/generateAPIKeyValidationSchema';
 
@@ -26,7 +26,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
   const { id: projectID } = param;
   const [fullSelected, setFullSelected] = useState(true);
   const [customSelected, setCustomSelected] = useState(false);
-  const org = useOrgStore.getState() as any;
   const { permissions } = useFetchPermissions();
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
@@ -56,7 +55,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     },
   });
 
-  const FullSelectHanlder = (isSelected: boolean) => {
+  const FullSelectHandler = (isSelected: boolean) => {
     setFullSelected(!!isSelected);
     setCustomSelected(false);
     // reset permissions
@@ -108,44 +107,56 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
   return (
     <Modal
       open={open}
-      title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
-      containerClassName="w-[35vw]"
+      title={t`Customize Your API Key`}
+      containerClassName="create-key-modal max-h-screen"
       onClose={onClose}
       data-testid="keyModal"
     >
       <>
         <FormikProvider value={formik}>
           <div>
-            <p className="mb-5">Name your key and select access permissions.</p>
+            <p className="mb-3">
+              <Trans>Name your key and select access permissions. We recommend that you:</Trans></p>
+            <ul className="mb-5 ml-5 list-disc list-outside">
+              <li><Trans>Use a prefix that identifies the application, service, or use case that the API key is for</Trans></li>
+              <li><Trans>Use a unique identifier for each API key (e.g. random number, a timestamp, or a UUID)</Trans></li>
+              <li><Trans>Use a descriptive suffix that indicates the permissions</Trans></li>
+            </ul>
+            <p className="mb-3"><Trans>Examples:</Trans></p>
+            <ul className="mb-5 ml-5 list-disc list-outside">
+              <li>my-app-12345-full-access</li>
+              <li>llama2-20241120-read-only</li>
+              <li>finance-team-uuid-write-only</li>
+            </ul>
             <Form className="space-y-6">
               <fieldset>
-                <h2 className="mb-3 font-semibold">Key Name</h2>
+                <h2 className="mb-3 font-semibold"><Trans>Key Name (required)</Trans></h2>
                 <TextField
-                  placeholder="default"
+                  placeholder={t`Enter key name`}
                   fullWidth
                   {...formik.getFieldProps('name')}
                   data-testid="keyName"
                 />
-                <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
+                <ErrorMessage name="name" component="small" className="text-xs text-danger-700" />
               </fieldset>
               <fieldset>
-                <h2 className="mb-3 font-semibold">Permissions</h2>
+                <h2 className="mb-3 font-semibold"><Trans>Permissions</Trans></h2>
                 <div className="space-y-8">
                   <Box>
-                    <h2 className="mb-1 font-semibold">Full Access</h2>
+                    <h2 className="mb-1 font-semibold"><Trans>Full Access</Trans></h2>
                     <StyledFieldset>
                       <Checkbox
                         {...formik.getFieldProps('full')}
-                        onChange={FullSelectHanlder}
+                        onChange={FullSelectHandler}
                         isSelected={fullSelected}
                       >
-                        Full Access (default) - Publish to topic, Subscribe to topic, Create Topic,
-                        Read Topic, Delete Topic, Destroy Topic.
+                        <Trans>Full Access (default) - Publish to topic, Subscribe to topic, Create Topic,
+                        Read Topic, Delete Topic, Destroy Topic.</Trans>
                       </Checkbox>
                     </StyledFieldset>
                   </Box>
                   <Box>
-                    <h2 className="mb-1 font-semibold">Custom Access</h2>
+                    <h2 className="mb-1 font-semibold"><Trans>Custom Access</Trans></h2>
                     <StyledFieldset>
                       <Checkbox
                         {...formik.getFieldProps('custom')}
@@ -156,7 +167,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
                         }}
                         isSelected={!!customSelected}
                       >
-                        Check to grant access for each action.
+                        <Trans>Check to grant access for each action.</Trans>
                       </Checkbox>
                     </StyledFieldset>
                     {customSelected && (
@@ -178,7 +189,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
                                   customSelected && values.permissions.includes(permission)
                                 }
                               >
-                                {permission}
+                                <Trans>{permission}</Trans>
                               </Checkbox>
                             </StyledFieldset>
                           ))}
@@ -189,7 +200,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
               </fieldset>
               <div className="item-center flex  justify-center">
                 <Button isLoading={isCreatingKey} data-testid="generateKey">
-                  Generate API Key
+                  <Trans>Generate API Key</Trans>
                 </Button>
               </div>
             </Form>

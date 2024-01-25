@@ -1,4 +1,4 @@
-import { Button, Menu, useMenu } from '@rotational/beacon-core';
+import { Menu, useMenu } from '@rotational/beacon-core';
 import { Fragment } from 'react';
 
 import SettingIcon from '@/components/icons/setting';
@@ -20,15 +20,13 @@ const SettingsButton = ({ data, key }: SettingsProps) => {
   return (
     <>
       <div>
-        <Button
-          variant="ghost"
-          size="custom"
+        <button
           className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
           data-cy="detailActions"
         >
           <SettingIcon />
-        </Button>
+        </button>
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
           {data.map((item: SettingsDataProps, idx: any) => (
             <Fragment key={idx}>

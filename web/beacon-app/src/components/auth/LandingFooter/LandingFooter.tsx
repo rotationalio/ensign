@@ -9,10 +9,10 @@ import TwitterIcon from '@/assets/icons/twitterIcon';
 function LandingFooter() {
   const { version: appVersion, revision: gitRevision } = appConfig;
   return (
-    <footer className="bg-footer bg-cover bg-no-repeat text-white ">
-      <div className="pt-72 2xl:pt-80">
+    <footer className="mt-20 bg-footer bg-cover bg-no-repeat text-white sm:mt-0 ">
+      <div className="pt-[300px] sm:pt-64 lg:pt-[225px] 2xl:pt-[320px]">
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto grid-cols-3 text-center sm:ml-0 sm:grid sm:text-left">
+          <div className="mx-auto grid text-center md:grid-cols-3">
             <div className="pt-4 font-bold leading-loose">
               <h3 className="font-light">PRODUCT</h3>
               <ul>
@@ -20,8 +20,13 @@ function LandingFooter() {
                   <a href={ROUTES.HOME}>Ensign</a>
                 </li>
                 <li>
+                  <a href={EXTERNAL_LINKS.ENSIGN_PRICING} target="_blank" rel="noreferrer">
+                    Pricing
+                  </a>
+                </li>
+                <li>
                   <a href={EXTERNAL_LINKS.DOCUMENTATION} target="_blank" rel="noreferrer">
-                    Documentation
+                    Docs
                   </a>
                 </li>
                 <li>
@@ -40,13 +45,19 @@ function LandingFooter() {
               <h3 className="font-light">COMPANY</h3>
               <ul>
                 <li>
-                  <a href={EXTERNAL_LINKS.SERVICES}>Services</a>
+                  <a href={EXTERNAL_LINKS.SERVICES} target="_blank" rel="noreferrer">
+                    Services
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.BLOG}>Blog</a>
+                  <a href={EXTERNAL_LINKS.BLOG} target="_blank" rel="noreferrer">
+                    Blog
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.ABOUT}>About</a>
+                  <a href={EXTERNAL_LINKS.ABOUT} target="_blank" rel="noreferrer">
+                    About
+                  </a>
                 </li>
               </ul>
             </div>
@@ -54,10 +65,24 @@ function LandingFooter() {
               <h3 className="font-light">COMMUNITY</h3>
               <ul>
                 <li>
-                  <a href={EXTERNAL_LINKS.DATA_PLAYGROUND}>Data Playground</a>
+                  <a href={EXTERNAL_LINKS.ENSIGN_UNIVERSITY} target="_blank" rel="noreferrer">
+                    Ensign U
+                  </a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.OPEN_SOURCE}>Open Source</a>
+                  <a href={EXTERNAL_LINKS.DATA_PLAYGROUND} target="_blank" rel="noreferrer">
+                    Data Playground
+                  </a>
+                </li>
+                <li>
+                  <a href={EXTERNAL_LINKS.OPEN_SOURCE} target="_blank" rel="noreferrer">
+                    Open Source
+                  </a>
+                </li>
+                <li>
+                  <a href={EXTERNAL_LINKS.RESOURCES} target="_blank" rel="noreferrer">
+                    Resources
+                  </a>
                 </li>
               </ul>
             </div>
@@ -95,13 +120,13 @@ function LandingFooter() {
                     rel="noreferrer"
                   >
                     <LinkedInIcon />
-                    <span className="mt-1 ml-4">LinkedIn</span>
+                    <span className="ml-4 mt-1">LinkedIn</span>
                   </a>
                 </div>
                 <div>
                   <a href={EXTERNAL_LINKS.EMAIL_US} className="icon-hover">
                     <EmailIcon />
-                    <span className="mt-1 ml-4">Email</span>
+                    <span className="ml-4 mt-1">Email</span>
                   </a>
                 </div>
               </div>
@@ -114,14 +139,18 @@ function LandingFooter() {
 
             <ul className="mt-4 flex sm:mt-0">
               <li className="mr-4 border-r pr-4">
-                <a href={EXTERNAL_LINKS.PRIVACY}>Privacy Policy</a>
+                <a href={EXTERNAL_LINKS.PRIVACY} target="_blank" rel="noreferrer">
+                  Privacy Policy
+                </a>
               </li>
               <li className="">
-                <a href={EXTERNAL_LINKS.TERMS}>Terms of Use</a>
+                <a href={EXTERNAL_LINKS.TERMS} target="_blank" rel="noreferrer">
+                  Terms of Use
+                </a>
               </li>
             </ul>
           </div>
-          <div className="justify-between py-3 px-6 text-center">
+          <div className="justify-between px-6 py-3 text-center">
             <p>
               {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
               {gitRevision && (

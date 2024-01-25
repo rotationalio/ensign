@@ -1,6 +1,6 @@
 import { twMerge } from 'tailwind-merge';
 
-import getInitials from '@/utils/getInitials';
+import { getInitials } from '@/utils/getInitials';
 
 import { StyledAvatar, StyledAvatarFallback, StyledAvatarImage } from './Avatar.styles';
 import { AvatarProps } from './Avatar.type';

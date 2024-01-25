@@ -10,6 +10,7 @@ import type {
   User,
 } from '@/features/auth/types/RegisterService';
 import { ResetPasswordDTO } from '@/features/auth/types/ResetPasswordService';
+import { StatusResponse } from '@/features/home/types/StatusService';
 import {
   MemberResponse,
   MembersResponse,
@@ -65,4 +66,6 @@ export interface ApiAdapters {
   updateProfile(payload: UpdateMemberDTO): Promise<MemberResponse>;
   forgotPassword(email: ForgotPasswordDTO): Promise<any>;
   resetPassword(payload: ResetPasswordDTO): Promise<any>;
+  getStatus(): Promise<StatusResponse>;
+  getInvitationAuthentication(token: string): Promise<any>;
 }

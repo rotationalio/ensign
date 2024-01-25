@@ -56,6 +56,7 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
         onClose={onClose}
         title={t`Create Project`}
         data-testid="newProjectModal"
+        data-cy="new-project-modal"
       >
         <>
           <p>

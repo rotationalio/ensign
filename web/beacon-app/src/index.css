@@ -153,6 +153,22 @@
   }
 }
 
+#landing-content {
+  min-height: calc(100vh - 600px);
+}
+
+.create-key-modal, .download-key-modal {
+  @media (min-width: 640px) {
+    width: min(50vw, 600px)!important;
+  }
+}
+
+.create-key-modal, .download-key-modal {
+  @media (max-width: 639px) {
+    width: max(80vw, 300px)!important;
+  }
+}
+
 .RightSlot {
   margin-left: auto;
   padding-left: 20px;

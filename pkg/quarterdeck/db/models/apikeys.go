@@ -148,6 +148,7 @@ func ListAPIKeys(ctx context.Context, orgID, projectID, userID ulid.ULID, prevPa
 		}
 		return nil, nil, err
 	}
+	defer rows.Close()
 
 	// Process rows into a result page
 	nRows := int32(0)
@@ -165,10 +166,6 @@ func ListAPIKeys(ctx context.Context, orgID, projectID, userID ulid.ULID, prevPa
 			return nil, nil, err
 		}
 		keys = append(keys, apikey)
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, nil, err
 	}
 
 	// Create the cursor to return if there is a next page of results

@@ -23,4 +23,6 @@ export const RQK = {
   PROJECT_QUICK_VIEW: 'projectQuickView',
   TOPIC_STATS: 'topic-stats',
   PROFILE: 'profile',
+  STATUS: 'status',
+  INVITATION_AUTHENTICATION: 'invitation-authentication',
 } as const;

@@ -373,12 +373,14 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Create the access and refresh tokens and return them.
+	// TODO: add account type from database rather than hardcoding "sandbox"
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: apikey.ID.String(),
 		},
-		OrgID:     apikey.OrgID.String(),
-		ProjectID: apikey.ProjectID.String(),
+		OrgID:       apikey.OrgID.String(),
+		ProjectID:   apikey.ProjectID.String(),
+		AccountType: "sandbox",
 	}
 
 	// Add the key permissions to the claims.
@@ -549,13 +551,15 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 	}
 
 	// Create a new claims object using the user retrieved from the database
+	// TODO: add account type from database rather than hardcoding "sandbox"
 	refreshClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
 		},
-		Name:    user.Name,
-		Email:   user.Email,
-		Picture: gravatar.New(user.Email, nil),
+		Name:        user.Name,
+		Email:       user.Email,
+		Picture:     gravatar.New(user.Email, nil),
+		AccountType: "sandbox",
 	}
 
 	// Add the orgID to the claims
@@ -637,12 +641,14 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Cl
 	}
 
 	// Create a new refreshClaims object using the apikey retrieved from the database
+	// TODO: add account type from database rather than hardcoding "sandbox"
 	refreshClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: apikey.ID.String(),
 		},
-		OrgID:     apikey.OrgID.String(),
-		ProjectID: apikey.ProjectID.String(),
+		OrgID:       apikey.OrgID.String(),
+		ProjectID:   apikey.ProjectID.String(),
+		AccountType: "sandbox",
 	}
 
 	// Add the key permissions to the claims.
@@ -736,14 +742,16 @@ func (s *Server) Switch(c *gin.Context) {
 	// Create access and refresh tokens for new organization
 	// NOTE: ensure that new claims are created and returned, not the old claims;
 	// otherwise the user may receive incorrect permissions.
+	// TODO: add account type from database rather than hardcoding "sandbox"
 	newClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
 		},
-		Name:    user.Name,
-		Email:   user.Email,
-		Picture: gravatar.New(user.Email, nil),
-		OrgID:   in.OrgID.String(),
+		Name:        user.Name,
+		Email:       user.Email,
+		Picture:     gravatar.New(user.Email, nil),
+		OrgID:       in.OrgID.String(),
+		AccountType: "sandbox",
 	}
 
 	// Add the user permissions to the claims

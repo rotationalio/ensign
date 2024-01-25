@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
 import invariant from 'invariant';
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { appConfig } from '@/application/config';
@@ -12,11 +13,14 @@ import { OrganizationMenuDropdown } from '@/components/MenuDropdown/Organization
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
+import useFetchStatus from '@/features/home/hooks/useFetchStatus';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
+
+import UpdateAlert from './UpdateAlert';
 
 type SidebarProps = {
   className?: string;
@@ -24,7 +28,11 @@ type SidebarProps = {
 
 function SideBar({ className }: SidebarProps) {
   const { profile: userInfo } = useFetchProfile();
-  const { version: appVersion, revision: gitRevision } = appConfig;
+  const { version: appVersion, revision: gitRevision, nodeENV: env } = appConfig;
+
+  // Store the app version in local storage.
+  const storedAppVersion = appVersion.match(/(\d+\.\d+\.\d+)/);
+  localStorage.setItem('appVersion', storedAppVersion?.[0] || '');
 
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -37,6 +45,7 @@ function SideBar({ className }: SidebarProps) {
     organizationsList: organizations?.organizations,
     currentOrg: appState?.orgID,
   });
+  const { status } = useFetchStatus();
 
   const onOpenChange = () => {
     setIsOpen(!isOpen);
@@ -72,15 +81,46 @@ function SideBar({ className }: SidebarProps) {
     invariant(appState?.orgID, 'orgID is not defined');
   }, [appState?.orgID]);
 
+  // Get the version number from the status response without the release level and number.
+  const statusVersion = status?.version.match(/^v?(\d+\.\d+\.\d+)/);
+
+  useEffect(() => {
+    const storedAppVersion = localStorage.getItem('appVersion');
+
+    if (env !== 'development') {
+      if (storedAppVersion && storedAppVersion !== statusVersion?.[0]) {
+        const updateAlertToast = toast.error(
+          <div className="flex items-center">
+            <UpdateAlert />
+          </div>,
+          {
+            // Display toast until the user clicks the update button.
+            duration: 999999999,
+            position: 'bottom-right',
+            icon: '🔔',
+            style: {
+              background: '#EBF5FF',
+              color: '#1E429F',
+            },
+          }
+        );
+
+        return () => {
+          toast.dismiss(updateAlertToast);
+        };
+      }
+    }
+  }, [statusVersion, env]);
+
   return (
     <>
       <aside
         className={cn(
-          `fixed top-0 left-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white md:w-[250px]`,
+          `fixed left-0 top-0 flex h-screen flex-col bg-[#1D65A6] pb-10 pt-5 text-white md:w-[250px]`,
           className
         )}
       >
-        <div className="flex h-full flex-col" data-cy="sidebar">
+        <div className="flex h-full flex-col" data-testid="sidebar" data-cy="sidebar">
           <div className="grow">
             <ErrorBoundary
               fallback={
@@ -94,7 +134,7 @@ function SideBar({ className }: SidebarProps) {
                 role="button"
                 tabIndex={0}
                 aria-hidden="true"
-                className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
+                className="flex w-full flex-row items-center justify-between py-2 pl-8 pr-5 text-sm outline-none"
                 data-testid="menu"
                 data-cy="menu"
               >
@@ -104,6 +144,7 @@ function SideBar({ className }: SidebarProps) {
                     src={appState?.picture || userInfo?.picture}
                     className="flex w-64  "
                     data-testid="avatar"
+                    data-cy="avatar"
                   />
                   <h1 className="flex" data-testid="orgName" data-cy="org-name">
                     {!org?.name && isFetchingOrg && <Loader className="flex" />}
@@ -118,6 +159,7 @@ function SideBar({ className }: SidebarProps) {
                       items={dropdownItems}
                       onOpenChange={onOpenChange}
                       isOpen={isOpen}
+                      data-cy="org-menu"
                     />
                   )}
                 </div>
@@ -137,7 +179,7 @@ function SideBar({ className }: SidebarProps) {
                   />
                 ))}
               </div>
-              <hr className="my-5 mx-8"></hr>
+              <hr className="mx-8 my-5"></hr>
               <div>
                 {otherMenuItems.map((item, index) => (
                   <MenuItem

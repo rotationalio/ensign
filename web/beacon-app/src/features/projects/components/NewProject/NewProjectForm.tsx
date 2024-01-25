@@ -33,7 +33,7 @@ function NewProjectForm({ onSubmit, isSubmitting, isDisabled }: NewProjectFormPr
   const { touched, errors, getFieldProps, values } = formik;
   return (
     <FormikProvider value={formik}>
-      <Form className="mt-3 mb-2 space-y-3">
+      <Form className="mb-2 mt-3 space-y-3">
         <StyledTextField
           label={t`Project Name (required)`}
           placeholder={t`Enter project name`}

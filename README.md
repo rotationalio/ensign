@@ -7,26 +7,18 @@
 Build the docker compose images:
 
 ```
-$ ./containers/build.sh build
+$ ./containers/local.sh -p backend build
 ```
 
 Then once the images are built run the docker containers:
 
 ```
-$ ./containers/build.sh up
+$ ./containers/local.sh -p backend up
 ```
 
-You can then run publishers and subscribers using the `debug` command to generate 30 events per second:
+## User UI
 
-```
-$ go run ./cmd/debug generate
-```
-
-And to create a subscriber to consume the events:
-
-```
-$ go run ./cmd/debug consume
-```
+For details on how to view the Ensign user UI locally, read the [Beacon app README](https://github.com/rotationalio/ensign/blob/develop/web/beacon-app/README.md).
 
 ## Documentation
 
@@ -68,7 +60,7 @@ To create a new documentation page:
 $ hugo new path/to/page.md
 ```
 
-This will create a new page with the documentation default template; open in a browser and edit in markdown; your changes should reload live in the browser! Our theme has many options and shortcodes; to see how these work, please viist the theme documentation. A couple of important quick links are below:
+This will create a new page with the documentation default template; open in a browser and edit in markdown; your changes should reload live in the browser! Our theme has many options and shortcodes; to see how these work, please visit the theme documentation. A couple of important quick links are below:
 
 - [Page Configuration](https://github.com/alex-shpak/hugo-book#page-configuration)
 - [Hints and Notification Blocks](https://hugo-book-demo.netlify.app/docs/shortcodes/hints/)

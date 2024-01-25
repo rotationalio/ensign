@@ -20,13 +20,15 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
       <Card
         style={{ borderRadius: '4px', border: '1px solid #6DD19C' }}
         contentClassName="m-[16px] w-full"
-        className="mt-8 mb-8 w-full border-[1px] border-green-800 bg-green/20 p-[4px]"
+        className="mb-8 mt-8 w-full border-[1px] border-green-800 bg-green/20 p-[4px]"
       >
         <Card.Body>
           <div className="flex items-center justify-between">
             <div>
               <Trans>
-                Your project is active! Check out our{' '}
+                Your project is active! You now have a{' '}
+                <span className="font-bold">data repository</span> for real-time data feeds. Next,
+                use our{' '}
                 <a
                   href={SDKLink}
                   target="_blank"
@@ -52,7 +54,7 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
                 >
                   example code
                 </a>{' '}
-                to connect publishers and subscribers to your project (database).
+                to connect publishers and subscribers to your project.
               </Trans>
             </div>
             <Button

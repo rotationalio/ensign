@@ -10,8 +10,9 @@ import { TbPlayFootball } from 'react-icons/tb';
 import { EXTERNAL_LINKS, PATH_DASHBOARD } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
 
-export const SIDEBAR_WIDTH = 250;
-export const TOPBAR_HEIGHT = 60;
+/* TODO: Verify if styles are used and remove if not. */
+export const SIDEBAR_WIDTH = 0;
+export const TOPBAR_HEIGHT = 0;
 
 export const menuItems: MenuItem[] = [
   {
@@ -96,7 +97,7 @@ export const footerItems = [
     isExternal: true,
   },
   {
-    name: <Trans>&copy; Rotational Labs, Inc</Trans>,
+    name: <Trans>&copy; Rotational Labs, Inc.</Trans>,
     href: EXTERNAL_LINKS.ROTATIONAL,
     isExternal: true,
   },

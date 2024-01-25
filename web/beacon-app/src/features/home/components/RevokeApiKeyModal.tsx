@@ -17,7 +17,7 @@ export default function RevokeApiKeyModal({ open }: RevokeApiKeyModalProps) {
     <>
       <Modal open={isOpen} title="Revoke API Key" size="medium">
         <div className="gap-3">
-          <Close onClick={closeModal} className="absolute top-6 right-8"></Close>
+          <Close onClick={closeModal} className="absolute right-8 top-6"></Close>
           <p className="my-3">
             Revoking the API key will result in producers and consumers connected to the topic to
             permanently lose access to the topic. To maintain access to the topic, generate a new

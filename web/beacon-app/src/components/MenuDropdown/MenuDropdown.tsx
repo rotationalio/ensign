@@ -8,16 +8,23 @@ interface RadixDropdownMenuProps {
   items: any;
   trigger?: React.ReactNode;
   isOpen?: boolean;
+  'data-cy'?: string;
   onOpenChange?: (isOpen: boolean) => void;
 }
 
-const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
+const MenuDropdownMenu = ({
+  items,
+  trigger,
+  isOpen,
+  'data-cy': dataCy,
+  onOpenChange,
+}: RadixDropdownMenuProps) => {
   //console.log('items menu', items);
   return (
     <div className="relative">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
-        <DropdownMenuPrimitive.Trigger>
-          <button className="border-none focus:ring-0">{trigger}</button>
+        <DropdownMenuPrimitive.Trigger className="border-none focus:ring-0" data-cy={dataCy}>
+          {trigger}
         </DropdownMenuPrimitive.Trigger>
 
         <DropdownMenuPrimitive.Portal>

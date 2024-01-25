@@ -40,9 +40,14 @@ export const USER_PERMISSIONS = {
   METRICS_READ: 'metrics:read',
 };
 
+export const PROJECT_STATE = {
+  ACTIVE: 'Active',
+  ARCHIVED: 'Archived',
+  INCOMPLETE: 'Incomplete',
+};
+
 export const TOPIC_STATE = {
   ACTIVE: 'Active',
-  PENDING: 'Pending',
   ARCHIVED: 'Archived',
-  DELETTING: 'Deleting',
+  DELETING: 'Deleting',
 };

@@ -1,6 +1,6 @@
 import { t, Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
-import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import styled from 'styled-components';
 
 import { useNewTopicForm } from '../schemas/createProjectTopicSchema';
@@ -15,20 +15,20 @@ type NewTopicModalFormProps = {
 function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
   const formik = useNewTopicForm(onSubmit);
 
-  const { touched, errors, getFieldProps } = formik;
+  const { getFieldProps } = formik;
 
   return (
     <FormikProvider value={formik}>
-      <Form className="mt-3 mb-2 space-y-2">
+      <Form className="mb-2 mt-3 space-y-2">
         <StyledTextField
           label={t`Topic Name (required)`}
-          labelClassName="font-semibold mb-2"
+          labelClassName="font-semibold text-base mb-2"
           placeholder={t`Enter topic name`}
           fullWidth
-          errorMessage={touched.topic_name && errors.topic_name}
           data-cy="topicName"
           {...getFieldProps('topic_name')}
         />
+        <ErrorMessage name="topic_name" component="small" className="text-xs text-danger-700" />
         <div className="text-center">
           <Button
             type="submit"

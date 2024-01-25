@@ -159,6 +159,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 	// Add index route
 	router.GET("/", s.Index)
+	router.GET("/services", s.Services)
+	router.GET("/incidents", s.Incidents)
 
 	// NotFound and NotAllowed routes
 	router.NoRoute(s.NotFound)

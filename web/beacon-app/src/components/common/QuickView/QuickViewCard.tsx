@@ -10,7 +10,7 @@ function QuickViewCard({ title, color, children, ...props }: QuickViewCardProps)
   return (
     <div
       style={{ backgroundColor: color }}
-      className="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+      className="flex h-[100px] w-full flex-col rounded-2xl px-8 py-4"
       {...props}
     >
       <Suspense
@@ -20,7 +20,7 @@ function QuickViewCard({ title, color, children, ...props }: QuickViewCardProps)
           </div>
         }
       >
-        <h5 className="pt-1 pb-3 font-semibold">{title}</h5>
+        <h5 className="pb-3 pt-1 font-semibold">{title}</h5>
         <p className="text-2xl font-semibold">{children}</p>
       </Suspense>
     </div>

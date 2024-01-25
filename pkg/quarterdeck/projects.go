@@ -202,6 +202,7 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 		OrgID:       claims.OrgID,
 		ProjectID:   project.ProjectID.String(),
 		Permissions: make([]string, 0, 4),
+		AccountType: claims.AccountType,
 	}
 
 	// Add only the user permissions related to topics and metrics to these claims -- whatever

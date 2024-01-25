@@ -8,14 +8,23 @@ import Logo from '@/components/common/Logo';
 function LandingHeader() {
   const location = useLocation();
   const isConfirmationPage = location.pathname == ROUTES.VERIFY_PAGE;
+  const isResetVerificationPage = location.pathname == ROUTES.RESET_VERIFICATION;
+  const isForgotPasswordPage = location.pathname == ROUTES.FORGOT_PASSWORD;
   const isEmailConfirmationPage = location.pathname == ROUTES.VERIFY_EMAIL;
+
+  const showLoginBtn = () => {
+    if (isConfirmationPage || isResetVerificationPage || isForgotPasswordPage) {
+      return true;
+    }
+    return false;
+  };
 
   return (
     <nav className="border-b border-primary-800 py-8">
       <div className="container mx-auto flex flex-wrap items-center justify-between">
         <Logo />
         <div className="space-x-8">
-          {isConfirmationPage && (
+          {showLoginBtn() && (
             <Link to="/">
               <Button
                 data-testid="login-button"
@@ -41,7 +50,7 @@ function LandingHeader() {
             </Link>
           )}
           <Link to="/" className="font-bold capitalize text-primary">
-            Ensign Beta
+            Ensign Sandbox
           </Link>
           {/* <Link to="/">
             <Button variant="tertiary" size="small">

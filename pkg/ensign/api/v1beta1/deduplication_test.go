@@ -603,7 +603,7 @@ func TestDuplicateReferencing(t *testing.T) {
 			PublisherId: "01HD1M0AVDVHPA4WA73MAA7NH7",
 			Ipaddr:      "192.148.21.133",
 			ClientId:    "data-ingestor-bravo",
-			UserAgent:   "Go-Ensign v0.11.0",
+			UserAgent:   "Go-Ensign v0.12.4",
 		}
 	}
 
@@ -982,7 +982,7 @@ func mkwevt(data, kvs string, mime mimetype.MIME, etype, created string) *EventW
 			PublisherId: "01HD1KY309F3SHSV1M89GSQBDF",
 			Ipaddr:      "192.168.1.1",
 			ClientId:    "data-ingestor-alpha",
-			UserAgent:   "PyEnsign v0.12.0",
+			UserAgent:   "PyEnsign v0.12.4",
 		},
 		Encryption:  &Encryption{EncryptionAlgorithm: Encryption_PLAINTEXT},
 		Compression: &Compression{Algorithm: Compression_NONE},
@@ -1016,7 +1016,7 @@ func createRandomEvent(mime mimetype.MIME, etype, meta string) *EventWrapper {
 			PublisherId: "01HD1KY309F3SHSV1M89GSQBDF",
 			Ipaddr:      "192.168.1.1",
 			ClientId:    "data-ingestor-alpha",
-			UserAgent:   "PyEnsign v0.12.0",
+			UserAgent:   "PyEnsign v0.12.4",
 		},
 		Encryption:  &Encryption{EncryptionAlgorithm: Encryption_PLAINTEXT},
 		Compression: &Compression{Algorithm: Compression_NONE},
