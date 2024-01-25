@@ -43,6 +43,7 @@ const useOrgStore = create(
           email: token?.email,
           picture: token?.picture,
           permissions: token?.permissions,
+          account: token?.account,
           isAuthenticated: isAuthed,
         }),
       setUserProfile: (member: MemberResponse) => set({ ...member }),

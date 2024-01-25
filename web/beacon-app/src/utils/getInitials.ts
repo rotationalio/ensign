@@ -1,13 +1,9 @@
-/**
- * Get initials of a given name (e.g: Calumn Scott -> CS)
- * @param name
- * @returns string
- */
-export default function getInitials(name = '') {
-  return name
-    .match(/(^\S\S?|\b\S)?/g)
-    ?.join('')
-    .match(/(^\S|\S$)?/g)
-    ?.join('')
-    .toUpperCase();
-}
+export const getInitials = (name: string) => {
+  const nameArray = name?.split(' ') || [''];
+  const initials =
+    nameArray.length >= 2
+      ? nameArray[0].charAt(0) + nameArray[1].charAt(0)
+      : nameArray[0].charAt(0) + nameArray[0].charAt(1);
+
+  return initials.toUpperCase();
+};

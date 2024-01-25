@@ -90,7 +90,7 @@ export default function ApiKeyModal({ open, onClose, projectName, keyData }: Api
                   </p>
                 </div>
               </div>
-              <div className="absolute top-3 right-3 flex gap-2">
+              <div className="absolute right-3 top-3 flex gap-2">
                 <button
                   onClick={() => handleDownload(clientInfo, apiKeyFileName)}
                   data-testid="download"

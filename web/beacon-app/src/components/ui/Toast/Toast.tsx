@@ -44,7 +44,7 @@ export const Toast = React.forwardRef<HTMLLIElement, ToastWithRadixProps>((props
           duration={duration}
           onOpenChange={onClose}
           className={twMerge(
-            'shadow-lg fixed inset-x-4 bottom-4 z-50 w-auto rounded-lg md:top-4 md:right-4 md:left-auto md:bottom-auto md:w-full md:max-w-sm',
+            'shadow-lg fixed inset-x-4 bottom-4 z-50 w-auto rounded-lg md:bottom-auto md:left-auto md:right-4 md:top-4 md:w-full md:max-w-sm',
             'bg-white',
             variant && getToastBgVariantStyle(variant),
             'radix-state-open:animate-toast-slide-in-bottom md:radix-state-open:animate-toast-slide-in-right',

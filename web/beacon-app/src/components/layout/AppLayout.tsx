@@ -5,7 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
+import { isSandboxAccount } from '@/features/sandbox/util/utils';
+import useAccountType from '@/hooks/useAccountType';
 
+import SandboxBanner from './SanboxBanner/SandboxBanner';
 import Topbar from './Topbar';
 
 type PageProps = {
@@ -18,6 +21,9 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   const { profile: loaderData } = useFetchProfile();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
+  const accountType = useAccountType();
+  const isSandboxAcct = isSandboxAccount(accountType);
+
   // if onboarded redirect to onboarded route
   useEffect(() => {
     if (!isOnboarded) {
@@ -28,6 +34,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   return (
     <>
       <Topbar Breadcrumbs={Breadcrumbs} isOnboarded={isOnboarded} profileData={loaderData} />
+      {isOnboarded && isSandboxAcct && <SandboxBanner />}
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>

@@ -120,13 +120,13 @@ function LandingFooter() {
                     rel="noreferrer"
                   >
                     <LinkedInIcon />
-                    <span className="mt-1 ml-4">LinkedIn</span>
+                    <span className="ml-4 mt-1">LinkedIn</span>
                   </a>
                 </div>
                 <div>
                   <a href={EXTERNAL_LINKS.EMAIL_US} className="icon-hover">
                     <EmailIcon />
-                    <span className="mt-1 ml-4">Email</span>
+                    <span className="ml-4 mt-1">Email</span>
                   </a>
                 </div>
               </div>
@@ -150,7 +150,7 @@ function LandingFooter() {
               </li>
             </ul>
           </div>
-          <div className="justify-between py-3 px-6 text-center">
+          <div className="justify-between px-6 py-3 text-center">
             <p>
               {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
               {gitRevision && (

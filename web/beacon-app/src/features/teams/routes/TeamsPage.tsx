@@ -43,7 +43,7 @@ export function TeamsPage() {
       </p>
       <div>
         <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
-          <div className="mt-3 ml-2">
+          <div className="ml-2 mt-3">
             <button disabled={isFetchingMembers} onClick={refreshHandler}>
               <div className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}>
                 <RefreshIcon />

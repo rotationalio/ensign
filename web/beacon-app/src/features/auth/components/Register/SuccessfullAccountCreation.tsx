@@ -44,7 +44,7 @@ function SuccessfullAccountCreation() {
               </h1>
             </Card.Header>
             <Card.Body>
-              <Heading as="h1" className="mt-4 mb-3 ">
+              <Heading as="h1" className="mb-3 mt-4 ">
                 <Trans>
                   To keep your account safe, we sent a verification email to{' '}
                   {userEmail ? (

@@ -20,7 +20,7 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
       <Card
         style={{ borderRadius: '4px', border: '1px solid #6DD19C' }}
         contentClassName="m-[16px] w-full"
-        className="mt-8 mb-8 w-full border-[1px] border-green-800 bg-green/20 p-[4px]"
+        className="mb-8 mt-8 w-full border-[1px] border-green-800 bg-green/20 p-[4px]"
       >
         <Card.Body>
           <div className="flex items-center justify-between">

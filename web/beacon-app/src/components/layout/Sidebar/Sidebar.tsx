@@ -116,11 +116,11 @@ function SideBar({ className }: SidebarProps) {
     <>
       <aside
         className={cn(
-          `fixed top-0 left-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white md:w-[250px]`,
+          `fixed left-0 top-0 flex h-screen flex-col bg-[#1D65A6] pb-10 pt-5 text-white md:w-[250px]`,
           className
         )}
       >
-        <div className="flex h-full flex-col" data-cy="sidebar">
+        <div className="flex h-full flex-col" data-testid="sidebar" data-cy="sidebar">
           <div className="grow">
             <ErrorBoundary
               fallback={
@@ -134,7 +134,7 @@ function SideBar({ className }: SidebarProps) {
                 role="button"
                 tabIndex={0}
                 aria-hidden="true"
-                className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
+                className="flex w-full flex-row items-center justify-between py-2 pl-8 pr-5 text-sm outline-none"
                 data-testid="menu"
                 data-cy="menu"
               >
@@ -179,7 +179,7 @@ function SideBar({ className }: SidebarProps) {
                   />
                 ))}
               </div>
-              <hr className="my-5 mx-8"></hr>
+              <hr className="mx-8 my-5"></hr>
               <div>
                 {otherMenuItems.map((item, index) => (
                   <MenuItem

@@ -16,6 +16,8 @@ export function useUpdateProfile(): ProfileUpdateMutation {
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_LIST] });
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_DETAIL] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROFILE] });
+      queryClient.invalidateQueries({ queryKey: [RQK.ORG_DETAIL] });
+      queryClient.invalidateQueries({ queryKey: [RQK.ORGANIZATION_LIST] });
       queryClient.setQueriesData([RQK.PROFILE], (oldData: any) => {
         return { ...oldData, ...data };
       });

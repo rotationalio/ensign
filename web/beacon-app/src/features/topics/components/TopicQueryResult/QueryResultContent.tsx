@@ -21,7 +21,7 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({
   const noQueryResult = !result && !mimeType && !hasInvalidQuery;
 
   return (
-    <div className="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white">
+    <div className="shadow-md max-h-[480px] min-h-20 overflow-y-auto bg-black p-4 text-white">
       <pre className="font-base mx-auto">
         <code data-cy="topic-query-result">
           {result && (
