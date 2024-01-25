@@ -2,24 +2,23 @@
 Hash: SHA256
 
 Contact: mailto:info@rotational.io
-Contact: https://rotational.io/contact/
-Expires: 2024-01-21T18:00:00.000Z
+Expires: 2025-01-22T00:00:00.000Z
 Encryption: https://keys.openpgp.org/vks/v1/by-fingerprint/8976758EC922C9362520F83E953A902549826C95
 Preferred-Languages: en
 Canonical: https://auth.rotational.app/.well-known/security.txt
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEEiXZ1jskiyTYlIPg+lTqQJUmCbJUFAmNRQ20ACgkQlTqQJUmC
-bJXlAg/+IlL16JQgTLkF0QhNI6pIn42KIynVBZXbzj8qlOvwWZxqFOZvOZHSSK7A
-lzjSlfJ+6CDeE4jBUgXmmY9P413CoVINKvkzlGehUFQEy7kHc/WKTmm5nuMDsY8I
-uK+pp4Yl3mZ6+ey5Lx8WavlIuACh3YD41OuwXQTw4MfOO7a6dCkQ6WVRcUObw4sS
-kYC/cF6VFF6Uv0QhlMs/ofRbpQAdeahgJyvADB4HOqvE3C8OkZlGwiUIm1/rePYd
-QxkykSn72ry/Y879kasPbhAYzrEJBuM2ejQ9L62XslzIzFBpWc75RI5a3jAPyFzw
-DXzByA4NP4jQC64Vrh8v08eZcevour4PRi4d/pfb2oD7znmSdz9dgebqqcu6WiAZ
-Z4CCjTcgSHBnZD5dbBWFly2Xlz0DWPoZxXjs3KQvGEs9Yyw7D9cMSrqI2rqOvY4h
-lfRhq35ANePMpVQOG6U7EwoWruGM26SLhYHeD6ylUVLd/E9Yd8XqECtSKXEYSfQG
-0BItbSWul9b1Ou7Q/iBSBVFys0b4LeHZrW2lwoA8KQDYOLBydQ14Ul78Ybc0zsRl
-9PR5mp7hcNZ7E1oCbJUgHLbdGx/vdU+J1ckmRzimiRslnQSd56P5QzE+Bb6v4GQU
-xO0TPc6AN1sdXOi+d0NOcQ0edk3Bt1TsxUKqvhhmytXVtLlDslY=
-=o6ob
+iQIzBAEBCAAdFiEEiXZ1jskiyTYlIPg+lTqQJUmCbJUFAmWy38YACgkQlTqQJUmC
+bJWi6g/8DWaMK3688/Xz8upaD5lrSdo+ENChYTdNZ1E7s7XGpuBdftNMc0+aPHKI
+rp3HwPOnOzlT2Servup9H8zspFE2P/BSQuTJg13/AgVA53z8T/3wLXPjWRUf4slU
++6WlEi/r1lGGWwl2QyHdBJbbKz0uFH/xl9aAshzjuf2wLrDiOh1QWawtVfeRUkiH
+fspHm8lzkP2uqVIH5OKNK2lT4zoy/zUjo38dyIPmNjtJbDe5xgmc+qcVaqBmy2Se
+iMNf0XihYuBGfFVeHoAHseJvLJjseojteQ4ayWyWff5AbRKuJvwIPk3rDfJBWhrO
+8y7qCimpO7hb0kxRT2oJifq2ihMBsdzuOJYRJIQLyUbtU3IULYiaYaDdOrsQ53tL
+9KxkUMuduUHM69Yb72jh/3mcTmZjcTeGnRXaZi3l/fV9JjIQmTl+sku59MBAIJTR
+GjZ3FZmxotezLseKrZmhXlwToYQSQ4YzxqsxSJgS2qFiuzKHY5k/lRAknv+FdrD7
+7sKLSSKGjL1kEq0A47UuseNbrO43XwQRFnuBQeMwUN/XPF71TMw2UicS3iARgJAj
+udl6gQVMyHtJCHNW6lwRjma63IB5MuUAyMcqLtG1pynbA/6FAE/e8PScMxY05u7/
+wxWfJ8C0RRVFGSWri0TZa2S2O/hqbbOcBujOsJrH2UKHr8ex44s=
+=OmQE
 -----END PGP SIGNATURE-----

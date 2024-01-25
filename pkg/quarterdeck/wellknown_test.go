@@ -91,6 +91,7 @@ func (s *quarterdeckTestSuite) TestSecurityTxt() {
 	// Not sure how to do this in golang tests, however.
 
 	// Error if the security.txt has expired - if this test fails, regenerate the security.txt file!
+	// See: https://app.shortcut.com/rotational/write/IkRvYyI6I3V1aWQgIjY1YjJhNjZmLTUwODUtNDIzNC1hNzlmLWYzM2QwMmJiYzNiZiI=
 	lines := strings.Split(string(actual), "\n")
 	found := false
 	for _, line := range lines {
