@@ -3,6 +3,7 @@ package ensign
 import (
 	"context"
 	goerrs "errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -165,10 +166,11 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 	// Retrieve the topic from the store
 	if out, err = s.meta.RetrieveTopic(topicID); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
+			sentry.Warn(ctx).Err(err).ULID("topic_id", topicID).Msg("topic not found")
 			return nil, status.Error(codes.NotFound, "topic not found")
 		}
 
-		sentry.Error(ctx).Err(err).Msg("could not retrieve topic")
+		sentry.Error(ctx).Err(err).ULID("topic_id", topicID).Msg("could not retrieve topic")
 		return nil, status.Error(codes.Internal, "could not complete retrieve topic request")
 	}
 
@@ -239,10 +241,11 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 	var topic *api.Topic
 	if topic, err = s.meta.RetrieveTopic(topicID); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
+			sentry.Warn(ctx).Err(err).ULID("topic_id", topicID).Msg("topic not found")
 			return nil, status.Error(codes.NotFound, "topic not found")
 		}
 
-		sentry.Error(ctx).Err(err).Msg("could not retrieve topic for deletion")
+		sentry.Error(ctx).Err(err).ULID("topic_id", topicID).Msg("could not retrieve topic for deletion")
 		return nil, status.Error(codes.Internal, "could not process delete topic request")
 	}
 
@@ -350,10 +353,11 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 	var topic *api.Topic
 	if topic, err = s.meta.RetrieveTopic(topicID); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
+			sentry.Warn(ctx).Err(err).ULID("topic_id", topicID).Msg("topic not found")
 			return nil, status.Error(codes.NotFound, "topic not found")
 		}
 
-		sentry.Error(ctx).Err(err).Msg("could not retrieve topic for policy change")
+		sentry.Error(ctx).Err(err).ULID("topic_id", topicID).Msg("could not retrieve topic for policy change")
 		return nil, status.Error(codes.Internal, "could not process set topic policy request")
 	}
 
@@ -419,7 +423,7 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 		// Mark the topic as ready again
 		topic, err := s.meta.RetrieveTopic(topicID)
 		if err != nil {
-			return err
+			return fmt.Errorf("error retrieving topic for topic_id %v: %v", topicID, err)
 		}
 
 		topic.Status = api.TopicState_READY

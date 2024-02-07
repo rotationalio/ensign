@@ -3,6 +3,7 @@ package ensign
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/oklog/ulid/v2"
@@ -61,14 +62,14 @@ func (s *Server) TopicFilter(topicID ulid.ULID) (_ *bloom.BloomFilter, err error
 func (s *Server) Rehash(ctx context.Context, topicID ulid.ULID, policy *api.Deduplication) (err error) {
 	// Clear old hashes from the database.
 	if err = s.data.ClearIndash(topicID); err != nil {
-		return err
+		return fmt.Errorf("could not clear old hashes from the database: %w", err)
 	}
 
 	// Load topic info to build bloom filter
 	// Will return not found if there is no associated topic.
 	var info *api.TopicInfo
 	if info, err = s.meta.TopicInfo(topicID); err != nil {
-		return err
+		return fmt.Errorf("could not fetch topic info to build bloom filter: %w", err)
 	}
 
 	// Build the bloom filter for deduplication
@@ -101,7 +102,7 @@ deduplication:
 
 		event, err := iter.Event()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not fetch next event in topic: %w", err)
 		}
 
 		// If we've reached the end of the events specified by the topic info snapshot
@@ -115,7 +116,7 @@ deduplication:
 			// Compute the hash of the event given the deduplication policy
 			hash, err := event.Hash(policy)
 			if err != nil {
-				return err
+				return fmt.Errorf("could not compute hash of event: %w", err)
 			}
 
 			// Check if the event is a duplicate of another event already
@@ -123,24 +124,24 @@ deduplication:
 				// Load the identified duplicate, verify that it is a duplicate
 				var target *api.EventWrapper
 				if target, err = s.data.Unhash(topicID, hash); err != nil {
-					return err
+					return fmt.Errorf("could not unhash event: %w", err)
 				}
 
 				var isDuplicate bool
 				if isDuplicate, err = event.Duplicates(target, policy); err != nil {
-					return err
+					return fmt.Errorf("could not identify duplicate: %w", err)
 				}
 
 				if isDuplicate {
 					// Mark the event as a duplicate and save back to database
 					// TODO: handle offset -- e.g. is the target the duplicate or the event?
 					if err = event.DuplicateOf(target, policy); err != nil {
-						return err
+						return fmt.Errorf("could not mark duplicate: %w", err)
 					}
 
 					// Save the duplicate back to the database
 					if err = s.data.Insert(event); err != nil {
-						return err
+						return fmt.Errorf("could not save duplicate: %w", err)
 					}
 
 					// Update the duplicate counts on the topic info
@@ -158,7 +159,7 @@ deduplication:
 
 			// If the topic is not a duplicate store the hash in the database.
 			if err := s.data.Indash(topicID, hash, rlid.RLID(event.Id)); err != nil {
-				return err
+				return fmt.Errorf("could not store hash in database: %w", err)
 			}
 		}
 
@@ -167,17 +168,17 @@ deduplication:
 		if event.IsDuplicate {
 			var orig *api.EventWrapper
 			if orig, err = s.data.Retrieve(topicID, rlid.RLID(event.DuplicateId)); err != nil {
-				return err
+				return fmt.Errorf("could not retrieve event: %w", err)
 			}
 
 			// TODO: do we need to handle the offset here?
 			if err = event.DuplicateFrom(orig); err != nil {
-				return err
+				return fmt.Errorf("could not fetch duplicate from original: %w", err)
 			}
 
 			// Save the duplicate back to the database
 			if err = s.data.Insert(event); err != nil {
-				return err
+				return fmt.Errorf("could not save duplicate to database: %w", err)
 			}
 		}
 	}
@@ -188,7 +189,7 @@ deduplication:
 
 	// Save the topic info back to disk so that it can be carried on later.
 	if err = s.meta.UpdateTopicInfo(info); err != nil {
-		return err
+		return fmt.Errorf("could not update topic info: %w", err)
 	}
 	return nil
 }

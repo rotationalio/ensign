@@ -246,6 +246,7 @@ func (s *Store) DeleteTopic(topicID ulid.ULID) (err error) {
 	var topic *api.Topic
 	if topic, err = s.RetrieveTopic(topicID); err != nil {
 		if errors.Is(err, errors.ErrNotFound) {
+			sentry.Warn(nil).Err(err).ULID("topic_id", topicID).Msg("topic not found")
 			return nil
 		}
 		return err
