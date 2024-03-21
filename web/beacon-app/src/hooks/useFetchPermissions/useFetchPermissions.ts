@@ -10,7 +10,7 @@ function useFetchPermissions() {
   const query = useQuery([RQK.PERMISSIONS], permissionsRequest(axiosInstance), {
     onError: (error: any) => {
       // stop logging 401 & 403 errors to sentry
-      if (error.response.status !== 401 && error.response.status !== 403) {
+      if (error?.response?.status !== 401 && error?.response?.status !== 403) {
         Sentry.captureException(error);
       }
     },

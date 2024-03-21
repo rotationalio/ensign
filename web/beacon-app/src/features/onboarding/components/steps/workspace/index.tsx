@@ -16,10 +16,10 @@ const WorkspaceStep = () => {
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
 
   // Check if the workspace is already taken.
-  const hasError = error && error.response.status === 409;
+  const hasError = error && error?.response?.status === 409;
 
   // Check for workspace URL validation error.
-  const hasValidationError = error && error.response.status === 400;
+  const hasValidationError = error && error?.response?.status === 400;
 
   const validationError = error?.response?.data?.validation_errors?.[0]?.error;
 
