@@ -34,7 +34,7 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
       {
         onError(error, _variables, _context) {
           toast.error((error as any)?.response?.data?.error || 'Something went wrong');
-          if ((error as any)?.response.status === 400) {
+          if ((error as any)?.response?.status === 400) {
             setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false });
           }
         },

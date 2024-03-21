@@ -17,7 +17,7 @@ export function useRegister(): RegistrationMutation {
           message: 'Register failed',
         },
       });
-      if (error.response.status === 409) {
+      if (error?.response?.status === 409) {
         toast.error(t`User already exists.`);
       } else {
         toast.error(error?.response?.data?.error);
