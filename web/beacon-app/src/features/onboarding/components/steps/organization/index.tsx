@@ -16,7 +16,7 @@ const OrganizationStep = () => {
   const state = useOrgStore((state: any) => state) as any;
 
   // Display error if organization name is already taken.
-  const hasError = error && error.response.status === 409;
+  const hasError = error && error?.response?.status === 409;
   const isInvited = isInvitedUser(profile);
   const submitFormHandler = (values: any) => {
     if (isInvited) {

@@ -16,7 +16,7 @@ const UserPreferenceStep = () => {
   const { profile } = useFetchProfile();
   const { wasProfileUpdated, isUpdatingProfile, error, updateProfile, hasProfileFailed } =
     useUpdateProfile();
-  const hasError = error && error.response.status === 400;
+  const hasError = error && error?.response?.status === 400;
 
   const submitFormHandler = (values: any) => {
     const requestPayload = {

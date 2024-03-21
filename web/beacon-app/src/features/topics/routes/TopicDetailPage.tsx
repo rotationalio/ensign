@@ -29,7 +29,7 @@ const TopicDetailPage = () => {
   // if user switch to another organization and topic is not found then
   // we need to redirect the user to the projects page
   useEffect(() => {
-    if (error && error.response.status === 401) {
+    if (error && error?.response?.status === 401) {
       navigate(PATH_DASHBOARD.PROJECTS);
     }
   }, [error, navigate]);

@@ -18,7 +18,7 @@ const useResendEmail = () => {
         }),
       });
       // send the status code to the client
-      const status = response.status;
+      const status = response?.status;
 
       return status;
     } catch (error) {
