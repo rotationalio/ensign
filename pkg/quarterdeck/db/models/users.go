@@ -43,6 +43,7 @@ type User struct {
 	Password                 string
 	AgreeToS                 sql.NullBool
 	AgreePrivacy             sql.NullBool
+	AccountType              string
 	EmailVerified            bool
 	EmailVerificationExpires sql.NullString
 	EmailVerificationToken   sql.NullString
@@ -73,9 +74,9 @@ type UserInvitation struct {
 }
 
 const (
-	getUserIDSQL          = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
-	getUserEmailSQL       = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
-	getUserTokenSQL       = "SELECT id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
+	getUserIDSQL          = "SELECT name, email, password, terms_agreement, privacy_agreement, account_type, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
+	getUserEmailSQL       = "SELECT id, name, password, terms_agreement, privacy_agreement, account_type, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
+	getUserTokenSQL       = "SELECT id, name, email, password, terms_agreement, privacy_agreement, account_type, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
 	getUserDeleteTokenSQL = "SELECT u.id FROM users u INNER JOIN organization_users ou ON u.id=ou.user_id WHERE ou.organization_id=:orgID AND ou.delete_confirmation_token=:token"
 )
 
@@ -106,7 +107,7 @@ func GetUser(ctx context.Context, userID, orgID any) (u *User, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.AccountType, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -144,7 +145,7 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.AccountType, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -183,7 +184,7 @@ func GetUserByToken(ctx context.Context, token string, orgID any) (u *User, err 
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserTokenSQL, sql.Named("token", u.EmailVerificationToken)).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserTokenSQL, sql.Named("token", u.EmailVerificationToken)).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.AccountType, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -248,7 +249,7 @@ func GetUserByDeleteToken(ctx context.Context, userID, orgID any, token string) 
 //===========================================================================
 
 const (
-	insertUserSQL    = "INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified) VALUES (:id, :name, :email, :password, :agreeTerms, :agreePrivacy, :emailVerified, :emailExpires, :emailToken, :emailSecret, :lastLogin, :created, :modified)"
+	insertUserSQL    = "INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, account_type, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified) VALUES (:id, :name, :email, :password, :agreeTerms, :agreePrivacy, :accountType, :emailVerified, :emailExpires, :emailToken, :emailSecret, :lastLogin, :created, :modified)"
 	insertUserOrgSQL = "INSERT INTO organization_users (user_id, organization_id, role_id, created, modified) VALUES (:userID, :orgID, (SELECT id FROM roles WHERE name=:role), :created, :modified)"
 )
 
@@ -275,7 +276,7 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 	}
 	defer tx.Rollback()
 
-	params := make([]any, 13)
+	params := make([]any, 14)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
@@ -283,12 +284,13 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 	params[4] = sql.Named("lastLogin", u.LastLogin)
 	params[5] = sql.Named("agreeTerms", u.AgreeToS)
 	params[6] = sql.Named("agreePrivacy", u.AgreePrivacy)
-	params[7] = sql.Named("emailVerified", u.EmailVerified)
-	params[8] = sql.Named("emailExpires", u.EmailVerificationExpires)
-	params[9] = sql.Named("emailToken", u.EmailVerificationToken)
-	params[10] = sql.Named("emailSecret", u.EmailVerificationSecret)
-	params[11] = sql.Named("created", u.Created)
-	params[12] = sql.Named("modified", u.Modified)
+	params[7] = sql.Named("accountType", u.AccountType)
+	params[8] = sql.Named("emailVerified", u.EmailVerified)
+	params[9] = sql.Named("emailExpires", u.EmailVerificationExpires)
+	params[10] = sql.Named("emailToken", u.EmailVerificationToken)
+	params[11] = sql.Named("emailSecret", u.EmailVerificationSecret)
+	params[12] = sql.Named("created", u.Created)
+	params[13] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(insertUserSQL, params...); err != nil {
 		var dberr sqlite3.Error
@@ -353,7 +355,7 @@ func (u *User) addOrganizationRole(tx *sql.Tx, org *Organization, role string) (
 }
 
 const (
-	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, email_verified=:emailVerified, email_verification_expires=:emailExpires, email_verification_token=:emailToken, email_verification_secret=:emailSecret, last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, account_type=:accountType, email_verified=:emailVerified, email_verification_expires=:emailExpires, email_verification_token=:emailToken, email_verification_secret=:emailSecret, last_login=:lastLogin, modified=:modified WHERE id=:id"
 )
 
 // Save a user's name, email, password, agreements, verification data, and last login.
@@ -372,19 +374,20 @@ func (u *User) Save(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	u.SetModified(time.Now())
-	params := make([]any, 12)
+	params := make([]any, 13)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
 	params[3] = sql.Named("password", u.Password)
 	params[4] = sql.Named("agreeToS", u.AgreeToS)
 	params[5] = sql.Named("agreePrivacy", u.AgreePrivacy)
-	params[6] = sql.Named("emailVerified", u.EmailVerified)
-	params[7] = sql.Named("emailExpires", u.EmailVerificationExpires)
-	params[8] = sql.Named("emailToken", u.EmailVerificationToken)
-	params[9] = sql.Named("emailSecret", u.EmailVerificationSecret)
-	params[10] = sql.Named("lastLogin", u.LastLogin)
-	params[11] = sql.Named("modified", u.Modified)
+	params[6] = sql.Named("accountType", u.AccountType)
+	params[7] = sql.Named("emailVerified", u.EmailVerified)
+	params[8] = sql.Named("emailExpires", u.EmailVerificationExpires)
+	params[9] = sql.Named("emailToken", u.EmailVerificationToken)
+	params[10] = sql.Named("emailSecret", u.EmailVerificationSecret)
+	params[11] = sql.Named("lastLogin", u.LastLogin)
+	params[12] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(updateUserSQL, params...); err != nil {
 		return err
@@ -618,7 +621,7 @@ func DeleteInvite(ctx context.Context, token string) (err error) {
 }
 
 const (
-	getAllUsersSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, email_verified, email_verification_expires, last_login, created, modified FROM users"
+	getAllUsersSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, account_type, email_verified, email_verification_expires, last_login, created, modified FROM users"
 )
 
 // ListAllUsers returns a paginated collection of all users in the database. This does
@@ -692,7 +695,7 @@ func ListAllUsers(ctx context.Context, prevPage *pagination.Cursor) (users []*Us
 		// Create user object to append to the users list
 		user := &User{}
 
-		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.EmailVerified, &user.EmailVerificationExpires, &user.LastLogin, &user.Created, &user.Modified); err != nil {
+		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.AccountType, &user.EmailVerified, &user.EmailVerificationExpires, &user.LastLogin, &user.Created, &user.Modified); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil, nil, nil
 			}
@@ -710,7 +713,7 @@ func ListAllUsers(ctx context.Context, prevPage *pagination.Cursor) (users []*Us
 }
 
 const (
-	getUsersForOrgSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
+	getUsersForOrgSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, account_type, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
 )
 
 // ListOrgUsers returns a paginated collection of users filtered by the orgID.
@@ -813,7 +816,7 @@ func ListOrgUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (
 		//create user object to append to the users list and add the orgID to it
 		user := &User{orgID: userOrg}
 
-		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.LastLogin, &user.Created, &user.Modified); err != nil {
+		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.AccountType, &user.LastLogin, &user.Created, &user.Modified); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil, nil, nil
 			}
@@ -1195,7 +1198,6 @@ func (u *User) Delete(tx *sql.Tx) (err error) {
 // the user has already been loaded into an organization, otherwise an error is
 // returned.
 func (u *User) NewClaims(ctx context.Context) (claims *qd.Claims, err error) {
-	// TODO: add account type from database rather than hardcoding "sandbox"
 	claims = &qd.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: u.ID.String(),
@@ -1203,7 +1205,7 @@ func (u *User) NewClaims(ctx context.Context) (claims *qd.Claims, err error) {
 		Name:        u.Name,
 		Email:       u.Email,
 		Picture:     gravatar.New(u.Email, nil),
-		AccountType: "sandbox",
+		AccountType: u.AccountType,
 	}
 
 	// Add the orgID to the claims
