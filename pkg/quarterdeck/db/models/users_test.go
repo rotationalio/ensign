@@ -57,9 +57,9 @@ func (m *modelTestSuite) TestGetUser() {
 		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHKS95XD0J25GHR14KT3WX1", models.ErrUserOrganization, false},
 	}
 
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		user, err := models.GetUser(context.Background(), tc.userID, tc.orgID)
-		require.ErrorIs(err, tc.err)
+		require.ErrorIs(err, tc.err, "unexpected error occurred for test case %d", i)
 
 		if tc.validateFields {
 			// Ensure all fields are returned and not zero valued

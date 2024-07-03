@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,7 +30,7 @@ func (m *modelTestSuite) SetupSuite() {
 // Creates a SQLite database with the current schema and the db module connected in a
 // temporary directory that will be cleaned up when the tests are complete.
 func (m *modelTestSuite) CreateDB() {
-	require := m.Require()
+	require := m.Assert()
 
 	// Only create the database path on the first call to CreateDB. Otherwise the call
 	// to TempDir() will be prefixed with the name of the subtest, which will cause an
@@ -57,11 +58,12 @@ func (m *modelTestSuite) CreateDB() {
 	}
 
 	tx.Commit()
+	fmt.Printf("test database created at %s\n", m.dbpath)
 }
 
 // Closes the connection to the current database and connects to a new database.
 func (m *modelTestSuite) ResetDB() {
-	require := m.Require()
+	require := m.Assert()
 	require.NoError(db.Close(), "could not close connection to db")
 	require.NoError(os.Remove(m.dbpath), "could not delete old db")
 	m.CreateDB()
