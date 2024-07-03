@@ -551,7 +551,6 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 	}
 
 	// Create a new claims object using the user retrieved from the database
-	// TODO: add account type from database rather than hardcoding "sandbox"
 	refreshClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
@@ -559,7 +558,7 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 		Name:        user.Name,
 		Email:       user.Email,
 		Picture:     gravatar.New(user.Email, nil),
-		AccountType: "sandbox",
+		AccountType: user.AccountType,
 	}
 
 	// Add the orgID to the claims
@@ -742,7 +741,6 @@ func (s *Server) Switch(c *gin.Context) {
 	// Create access and refresh tokens for new organization
 	// NOTE: ensure that new claims are created and returned, not the old claims;
 	// otherwise the user may receive incorrect permissions.
-	// TODO: add account type from database rather than hardcoding "sandbox"
 	newClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
@@ -751,7 +749,7 @@ func (s *Server) Switch(c *gin.Context) {
 		Email:       user.Email,
 		Picture:     gravatar.New(user.Email, nil),
 		OrgID:       in.OrgID.String(),
-		AccountType: "sandbox",
+		AccountType: user.AccountType,
 	}
 
 	// Add the user permissions to the claims
