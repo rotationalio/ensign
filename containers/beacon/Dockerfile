@@ -1,5 +1,5 @@
 # Dynamic Builds
-ARG BUILDER_IMAGE=node:16
+ARG BUILDER_IMAGE=node:18
 ARG FINAL_IMAGE=nginx:stable
 
 # Build stage
