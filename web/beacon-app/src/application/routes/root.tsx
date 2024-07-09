@@ -52,7 +52,6 @@ const router = createBrowserRouter(
         <Route path="dashboard" element={<Home />} />
         <Route path="projects">
           <Route index element={<ProjectsPage />} />
-          <Route path=":project-setup" element={<>Project setup</>} />
           <Route path=":id" element={<ProjectDetailPage />} />
         </Route>
         <Route
