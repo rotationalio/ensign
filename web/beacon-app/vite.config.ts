@@ -5,7 +5,7 @@ import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsConfigPaths from 'vite-tsconfig-paths';
 import { lingui } from '@lingui/vite-plugin';
-import { VitePluginFonts } from 'vite-plugin-fonts';
+import UnpluginFonts from 'unplugin-fonts/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -19,7 +19,7 @@ export default defineConfig({
     eslint(),
     svgrPlugin(),
     tsConfigPaths(),
-    VitePluginFonts({
+    UnpluginFonts({
       google: {
         families: ['Quattrocento', 'PT Mono'],
       },
