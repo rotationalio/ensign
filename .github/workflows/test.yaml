@@ -89,7 +89,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x.x"
+          node-version: "<=18.x.x"
           cache: "yarn"
           cache-dependency-path: ./web/beacon-app/yarn.lock
 
