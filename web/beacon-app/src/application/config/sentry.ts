@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
 
 import appConfig from './appConfig';
 
@@ -9,7 +8,7 @@ const initSentry = () => {
   if (dsn) {
     Sentry.init({
       dsn: dsn,
-      integrations: [new BrowserTracing()],
+      integrations: [Sentry.browserTracingIntegration()],
       environment: environment,
       tracesSampleRate: 1.0,
     });
