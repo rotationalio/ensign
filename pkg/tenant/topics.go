@@ -647,7 +647,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		}
 
 		// Don't proceed if the topic is already being deleted
-		if t.State == pb.TopicTombstone_DELETING {
+		if t.State == pb.TopicState_DELETING {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic is already being deleted"))
 			return
 		}
@@ -662,7 +662,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		}
 
 		// Archive means a "soft" delete in Ensign (no data is destroyed)
-		if err = s.ensign.InvokeOnce(accessToken).ArchiveTopic(ctx, t.ID.String()); err != nil {
+		if _, err = s.ensign.InvokeOnce(accessToken).ArchiveTopic(ctx, t.ID.String()); err != nil {
 			switch {
 			case err.Error() == "not implemented yet":
 				sentry.Warn(c).Err(err).Msg("this version of the Go SDK does not support topic archiving")
@@ -674,7 +674,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 				return
 			}
 		}
-		t.State = pb.TopicTombstone_READONLY
+		t.State = pb.TopicState_READONLY
 	}
 
 	// Update topic in the database and return a 500 response if the topic
@@ -820,7 +820,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Request topic delete from Ensign, which will destroy the topic and all of its data
-	if err = s.ensign.InvokeOnce(accessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
+	if _, err = s.ensign.InvokeOnce(accessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
 		// TODO: Update with the standard errors defined by the SDK
 		switch {
 		case err.Error() == "not implemented yet":
@@ -835,7 +835,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// The delete request is asynchronous so just update the state in the database
-	topic.State = pb.TopicTombstone_DELETING
+	topic.State = pb.TopicState_DELETING
 	if err = db.UpdateTopic(ctx, topic); err != nil {
 		sentry.Error(c).Err(err).Msg("could not update tombstone topic in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
