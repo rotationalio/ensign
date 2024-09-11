@@ -25,7 +25,7 @@ func TestRecovery(t *testing.T) {
 	srv := mock.New(nil, opts...)
 
 	// Create client to trigger requests
-	client, err := srv.Client(context.Background())
+	client, err := srv.Client()
 	require.NoError(t, err, "could not connect client to mock")
 
 	t.Run("UnaryPanic", func(t *testing.T) {

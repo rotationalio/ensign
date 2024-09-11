@@ -64,7 +64,7 @@ func TestMaintenanceMode(t *testing.T) {
 	t.Cleanup(cancel)
 
 	// Create a client for testing purposes
-	cc, err := conn.Connect(ctx, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cc, err := conn.Connect(grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err, "could not connect to bufconn")
 	client := api.NewEnsignClient(cc)
 

@@ -53,7 +53,7 @@ func TestAuthenticator(t *testing.T) {
 
 		// Create a client to trigger requests
 		ctx := context.Background()
-		client, err := srv.ResetClient(ctx)
+		client, err := srv.ResetClient()
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Should not be able to connect to RPC without authentication
@@ -61,7 +61,7 @@ func TestAuthenticator(t *testing.T) {
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = missing credentials")
 
 		// Should not be able to connect with an invalid JWT token
-		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 		_, err = client.ListTopics(ctx, &api.PageInfo{})
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = invalid credentials")
@@ -69,7 +69,7 @@ func TestAuthenticator(t *testing.T) {
 		// Should be able to connect with a valid auth token and claims should be in context
 		token, err := auth.CreateAccessToken(&tokens.Claims{Email: "test@example.com"})
 		require.NoError(t, err, "could not create access token")
-		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		_, err = client.ListTopics(ctx, &api.PageInfo{})
@@ -81,7 +81,7 @@ func TestAuthenticator(t *testing.T) {
 
 		// Create a client to trigger requests
 		ctx := context.Background()
-		client, err := srv.ResetClient(ctx)
+		client, err := srv.ResetClient()
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Handle stream RPC
@@ -104,7 +104,7 @@ func TestAuthenticator(t *testing.T) {
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = missing credentials")
 
 		// Should not be able to connect with an invalid JWT token
-		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Should be able to connect to RPC without authentication
@@ -118,7 +118,7 @@ func TestAuthenticator(t *testing.T) {
 		// Should be able to connect with a valid auth token and claims should be in context
 		token, err := auth.CreateAccessToken(&tokens.Claims{Email: "test@example.com"})
 		require.NoError(t, err, "could not create access token")
-		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Should be able to connect to RPC without authentication
@@ -133,10 +133,10 @@ func TestAuthenticator(t *testing.T) {
 	t.Run("Public", func(t *testing.T) {
 		// Create a client to trigger requests
 		ctx := context.Background()
-		client, err := srv.ResetClient(ctx)
+		client, err := srv.ResetClient()
 		require.NoError(t, err, "could not connect client to mock")
 
-		probe, err := srv.HealthClient(ctx)
+		probe, err := srv.HealthClient()
 		require.NoError(t, err, "could not connect client to mock")
 
 		srv.OnStatus = func(context.Context, *api.HealthCheck) (*api.ServiceState, error) {
