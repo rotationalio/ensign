@@ -83,7 +83,7 @@ type Ensign struct {
 }
 
 // Create and connect an Ensign client to the mock server
-func (s *Ensign) Client(ctx context.Context, opts ...grpc.DialOption) (client api.EnsignClient, err error) {
+func (s *Ensign) Client(opts ...grpc.DialOption) (client api.EnsignClient, err error) {
 	if s.client == nil {
 		if len(opts) == 0 {
 			opts = make([]grpc.DialOption, 0, 1)
@@ -91,7 +91,7 @@ func (s *Ensign) Client(ctx context.Context, opts ...grpc.DialOption) (client ap
 		}
 
 		var cc *grpc.ClientConn
-		if cc, err = s.bufnet.Connect(ctx, opts...); err != nil {
+		if cc, err = s.bufnet.Connect(opts...); err != nil {
 			return nil, err
 		}
 		s.client = api.NewEnsignClient(cc)
@@ -100,19 +100,19 @@ func (s *Ensign) Client(ctx context.Context, opts ...grpc.DialOption) (client ap
 }
 
 // Reset the client with the new dial options
-func (s *Ensign) ResetClient(ctx context.Context, opts ...grpc.DialOption) (api.EnsignClient, error) {
+func (s *Ensign) ResetClient(opts ...grpc.DialOption) (api.EnsignClient, error) {
 	s.client = nil
-	return s.Client(ctx, opts...)
+	return s.Client(opts...)
 }
 
-func (s *Ensign) HealthClient(ctx context.Context, opts ...grpc.DialOption) (client health.HealthClient, err error) {
+func (s *Ensign) HealthClient(opts ...grpc.DialOption) (client health.HealthClient, err error) {
 	if len(opts) == 0 {
 		opts = make([]grpc.DialOption, 0, 1)
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = s.bufnet.Connect(ctx, opts...); err != nil {
+	if cc, err = s.bufnet.Connect(opts...); err != nil {
 		return nil, err
 	}
 	return health.NewHealthClient(cc), nil

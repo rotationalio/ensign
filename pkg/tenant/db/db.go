@@ -92,7 +92,7 @@ func Connect(conf config.DatabaseConfig) (err error) {
 		opts = append(opts, creds)
 	}
 
-	if cc, err = grpc.Dial(endpoint, opts...); err != nil {
+	if cc, err = grpc.NewClient(endpoint, opts...); err != nil {
 		return err
 	}
 

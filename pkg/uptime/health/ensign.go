@@ -44,7 +44,7 @@ func NewEnsignMonitor(endpoint string, opts ...MonitorOption) (mon *EnsignMonito
 	}
 
 	mon = &EnsignMonitor{}
-	if mon.cc, err = grpc.Dial(endpoint, dialer...); err != nil {
+	if mon.cc, err = grpc.NewClient(endpoint, dialer...); err != nil {
 		return nil, err
 	}
 

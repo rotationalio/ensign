@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	bufsize   = 1024 * 1024
-	buftarget = "bufnet"
+	bufsize  = 1024 * 1024
+	Endpoint = "passthrough://bufnet"
 )
 
 // Listener handles gRPC connections using an in-memory buffer that is useful for
@@ -34,7 +34,7 @@ func New(opts ...DialOption) *Listener {
 	}
 
 	if sock.target == "" {
-		sock.target = buftarget
+		sock.target = Endpoint
 	}
 
 	if sock.sock == nil {
@@ -55,9 +55,9 @@ func (l *Listener) Close() error {
 }
 
 // Connect returns the client side of the bufconn connection.
-func (l *Listener) Connect(ctx context.Context, opts ...grpc.DialOption) (cc *grpc.ClientConn, err error) {
+func (l *Listener) Connect(opts ...grpc.DialOption) (cc *grpc.ClientConn, err error) {
 	opts = append([]grpc.DialOption{grpc.WithContextDialer(l.Dialer)}, opts...)
-	if cc, err = grpc.DialContext(ctx, l.target, opts...); err != nil {
+	if cc, err = grpc.NewClient(l.target, opts...); err != nil {
 		return nil, err
 	}
 	return cc, nil

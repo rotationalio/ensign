@@ -90,7 +90,7 @@ func (s *serverTestSuite) SetupSuite() {
 	time.Sleep(750 * time.Millisecond)
 
 	// Create a client for testing purposes
-	cc, err := s.conn.Connect(context.Background(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cc, err := s.conn.Connect(grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(err, "could not connect to bufconn")
 	s.client = api.NewEnsignClient(cc)
 

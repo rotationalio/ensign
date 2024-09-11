@@ -169,7 +169,7 @@ func TestServer(t *testing.T) {
 		bufnet.Close()
 	}()
 
-	cc, err := bufnet.Connect(context.Background(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cc, err := bufnet.Connect(grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err, "could not connect to probe server")
 
 	var wg sync.WaitGroup

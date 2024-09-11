@@ -201,7 +201,7 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 					return nil, status.Errorf(codes.InvalidArgument, "wrong topic name provided to put on topic state change")
 				}
 
-				if topic.State != api.TopicTombstone_READONLY {
+				if topic.State != api.TopicState_READONLY {
 					return nil, status.Errorf(codes.InvalidArgument, "expected topic provided to put to have readonly status on topic state change")
 				}
 			default:

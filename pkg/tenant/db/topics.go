@@ -31,18 +31,18 @@ var (
 )
 
 type Topic struct {
-	OrgID              ulid.ULID                `msgpack:"org_id"`
-	ProjectID          ulid.ULID                `msgpack:"project_id"`
-	ID                 ulid.ULID                `msgpack:"id"`
-	Name               string                   `msgpack:"name"`
-	State              pb.TopicTombstone_Status `msgpack:"state"`
-	Events             float64                  `msgpack:"events"`
-	Storage            float64                  `msgpack:"storage"`
-	Publishers         *metatopic.Activity      `msgpack:"publishers"`
-	Subscribers        *metatopic.Activity      `msgpack:"subscribers"`
-	ConfirmDeleteToken string                   `msgpack:"confirm_delete_token"`
-	Created            time.Time                `msgpack:"created"`
-	Modified           time.Time                `msgpack:"modified"`
+	OrgID              ulid.ULID           `msgpack:"org_id"`
+	ProjectID          ulid.ULID           `msgpack:"project_id"`
+	ID                 ulid.ULID           `msgpack:"id"`
+	Name               string              `msgpack:"name"`
+	State              pb.TopicState       `msgpack:"state"`
+	Events             float64             `msgpack:"events"`
+	Storage            float64             `msgpack:"storage"`
+	Publishers         *metatopic.Activity `msgpack:"publishers"`
+	Subscribers        *metatopic.Activity `msgpack:"subscribers"`
+	ConfirmDeleteToken string              `msgpack:"confirm_delete_token"`
+	Created            time.Time           `msgpack:"created"`
+	Modified           time.Time           `msgpack:"modified"`
 }
 
 var _ Model = &Topic{}
@@ -122,9 +122,9 @@ func (t *Topic) Validate() error {
 // Status returns a human readable status string based on the internal state.
 func (t *Topic) Status() string {
 	switch t.State {
-	case pb.TopicTombstone_DELETING:
+	case pb.TopicState_DELETING:
 		return TopicStatusDeleting
-	case pb.TopicTombstone_READONLY:
+	case pb.TopicState_READONLY:
 		return TopicStatusArchived
 	default:
 		return TopicStatusActive
