@@ -131,13 +131,13 @@ func status(c *cli.Context) (err error) {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	var cc *grpc.ClientConn
-	if cc, err = grpc.DialContext(ctx, endpoint, opts...); err != nil {
+	if cc, err = grpc.NewClient(endpoint, opts...); err != nil {
 		return cli.Exit(err, 1)
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	var rep *api.ServiceState
 	client := api.NewEnsignClient(cc)

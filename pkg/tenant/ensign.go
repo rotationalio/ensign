@@ -193,7 +193,7 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 		}
 
 		// Currently the only valid state change is read-only
-		topic.State = api.TopicTombstone_READONLY
+		topic.State = api.TopicState_READONLY
 
 		if err = db.UpdateTopic(ctx, topic); err != nil {
 			return err

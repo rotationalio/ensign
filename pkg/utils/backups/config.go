@@ -1,6 +1,7 @@
 package backups
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -19,7 +20,7 @@ type Config struct {
 
 	// The path to a local disk directory to store compressed backups, e.g.
 	// file:///rel/path/ or a cloud location such as s3://bucket.
-	StorageDSN string `split_words:"true" required:"true"`
+	StorageDSN string `split_words:"true" required:"false"`
 
 	// Temporary directory to perform local backup to. If not set, then the OS tmpdir
 	// is used. Backups are generated in this folder and then moved to the storage
@@ -31,6 +32,16 @@ type Config struct {
 
 	// The number of previous backup versions to keep.
 	Keep int `default:"1"`
+}
+
+// Validate the Config
+func (c Config) Validate() error {
+	if c.Enabled {
+		if c.StorageDSN == "" {
+			return errors.New("invalid backup configuration: storage dsn is required")
+		}
+	}
+	return nil
 }
 
 // Storage returns the storage configuration specified by the storage DSN.

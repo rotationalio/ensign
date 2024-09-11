@@ -31,11 +31,11 @@ func TestMaintenance(t *testing.T) {
 
 	// Create client to trigger requests
 	ctx := context.Background()
-	client, err := srv.Client(ctx)
+	client, err := srv.Client()
 	require.NoError(t, err, "could not connect client to mock")
 
 	// Create health probe
-	probe, err := srv.HealthClient(ctx)
+	probe, err := srv.HealthClient()
 	require.NoError(t, err)
 
 	t.Run("UnaryMaintenance", func(t *testing.T) {
