@@ -822,10 +822,15 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Request topic delete from Ensign, which will destroy the topic and all of its data
 	if _, err = s.ensign.InvokeOnce(accessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
 		// TODO: Update with the standard errors defined by the SDK
+		serr, isStatusError := status.FromError(err)
+
 		switch {
 		case err.Error() == "not implemented yet":
 			sentry.Warn(c).Err(err).Msg("this version of the Go SDK does not support topic deletion")
 			c.JSON(http.StatusNotImplemented, api.ErrorResponse("deleting a topic is not supported"))
+			return
+		case isStatusError && serr.Code() == codes.NotFound:
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		default:
 			sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")

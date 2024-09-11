@@ -1129,17 +1129,16 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic is already being deleted")
 
 	// Valid request to update the topic state.
-	// TODO: Update this test when topic archive is implemented in the SDK.
-	topic.State = sdk.TopicState_UNDEFINED
+	topic.State = sdk.TopicState_READY
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
+	require.NoError(err, "could not update topic")
 
 	// Make another topic update request to exercise the cache.
 	req.Name = "AnotherTopicName"
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
+	require.NoError(err, "could not update topic")
 
 	// Quarterdeck should only be called once, subsequent calls should use the cache.
 	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
@@ -1181,14 +1180,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not update topic", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicStatus, error) {
 		return nil, status.Error(codes.Internal, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not update topic", "expected error when Ensign returns an error")
 }
 
 func (suite *tenantTestSuite) TestTopicDelete() {
@@ -1331,14 +1330,15 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when wrong token is provided")
 
 	// Valid delete request
-	// TODO: Update when the DestroyTopic is implemented in the Go SDK.
 	req.Token = reply.Token
-	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
+	confirm, err := suite.client.TopicDelete(ctx, req)
+	require.NoError(err, "could not delete topic")
+	require.Equal(sdk.TopicState_DELETING.String(), confirm.Status, "unexpected delete status returned")
 
 	// Make a second call to the delete endpoint to exercise the cache.
-	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
+	confirm, err = suite.client.TopicDelete(ctx, req)
+	require.NoError(err, "could not delete topic cache")
+	require.Equal(sdk.TopicState_DELETING.String(), confirm.Status, "unexpected delete status returned")
 
 	// Quarterdeck should only be called once, subsequent calls should use the cache.
 	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
@@ -1376,15 +1376,15 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	// Should return not found if Ensign returns not found.
 	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicStatus, error) {
-		return nil, status.Error(codes.NotFound, "could not delete topic")
+		return nil, status.Error(codes.NotFound, "topic not found")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicStatus, error) {
 		return nil, status.Error(codes.Internal, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not delete topic", "expected error when Ensign returns an error")
 }
