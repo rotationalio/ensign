@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ensign</title>
+
+  <link rel="icon" href="favicon.png" sizes="32x32">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    body {
+      font-family: "Montserrat", sans-serif;
+      height: 100vh;
+      background: linear-gradient(135deg, #f5f5f5, #e0f7fa, #bbdefb)
+    }
+
+    p {
+      font-size: 1.3em;
+      line-height: 1.5;
+      padding-bottom: 0.5rem;
+      text-wrap: pretty;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 60%;
+      margin: 0 auto;
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+      text-align: center;
+    }
+
+    section img {
+      width: 35%;
+      height: auto;
+      margin: auto;
+      margin-bottom: 2rem;
+    }
+
+    #buttons-container {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.2em;
+      font-weight: 500;
+      gap: 0.5rem;
+    }
+
+    .github {
+      background-color: black;
+    }
+
+    .website {
+      background-color: #1d65a6;
+    }
+
+    .otter-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-right: 5%;
+      margin-top: 2rem;
+    }
+
+    .floating-otter {
+      max-width: 200px;
+      height: auto;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+
+      100% {
+        transform: translateY(0px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        height: 100%;
+      }
+
+      section {
+        max-width: 90%;
+      }
+
+      section img {
+        width: 60%;
+      }
+
+      #buttons {
+        flex-direction: column;
+        gap: 2rem;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id="container">
+    <section>
+      <div>
+        <img src="rotational-logo.png" alt="Rotational Logo">
+      </div>
+      <p>Thank you for your interest in Ensign! Rotational has ended support for Ensign and it is no longer available.
+        It is open source and the repository may be found <a href="https://github.com/rotationalio/ensign">here</a> if
+        you'd like to fork it and use it for yourself.</p>
+      <p>We're still working on some exciting stuff. Check us out at <a href="https://rotational.io">rotational.io</a>
+        to see what we're working on!</p>
+      <div id="buttons-container">
+        <a class="btn github" href="https://github.com/rotationalio/ensign">
+          Ensign Repository
+          <i class="fa-brands fa-github"></i>
+        </a>
+        <a class="btn website" href="https://rotational.io">
+          Rotational Website
+          <i class="fa fa-globe"></i>
+        </a>
+      </div>
+    </section>
+    <div class="otter-container">
+      <img src="otter-floating.svg" alt="Floating otter" class="floating-otter">
+    </div>
+  </div>
+
+</body>
+
+</html>
