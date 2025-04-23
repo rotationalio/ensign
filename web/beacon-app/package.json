@@ -1,6 +1,6 @@
 {
   "name": "beacon-app",
-  "version": "0.12.8",
+  "version": "0.12.9",
   "description": "User UI for Ensign.",
   "main": "index.js",
   "repository": "https://github.com/rotationalio/ensign",
